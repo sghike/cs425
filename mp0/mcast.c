@@ -9,7 +9,8 @@ pthread_t send_beats_thread;
 pthread_t flush_beats_thread;
 int *mcast_pings;
 int mcast_ping_num_members, mcast_ping_mem_alloc;
-int ping_duration = 20;
+int flush_duration = 20;
+int send_duration = 10;
 
 void *send_heart_beats(void *duration) {
     int i;
@@ -97,13 +98,13 @@ void multicast_init(void) {
 
     // Create a thread to send heart beats to other processes.
     if (pthread_create(&send_beats_thread, NULL, &send_heart_beats, 
-                       (void *)&ping_duration) != 0) {
+                       (void *)&send_duration) != 0) {
       fprintf(stderr, "Error in pthread_create inside multicast_init\n");
       exit(1);
     }
     // Create a thread to determine failures.
     if (pthread_create(&flush_beats_thread, NULL, &flush_received_beats, 
-                       (void *)&ping_duration) != 0) {
+                       (void *)&flush_duration) != 0) {
       fprintf(stderr, "Error in pthread_create inside multicast_init\n");
       exit(1);
     }
