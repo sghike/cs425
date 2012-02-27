@@ -7,16 +7,13 @@
 
 pthread_t send_beats_thread;
 pthread_t flush_beats_thread;
-int mcast_ping_num_members;
-int mcast_ping_mem_alloc;
+int mcast_ping_num_members; // Different variable needed since call to
+                            // mcast_join is not lock protected in unicast.c.
+int mcast_ping_mem_alloc;   // Same as above.
 int flush_duration;
 int send_duration;
 
-typedef struct {
-  int pid;
-  int ping;
-} mcast_ping;
-
+typedef int mcast_ping;
 mcast_ping *mcast_pings;
 
 void *send_heart_beats(void *duration) {
@@ -32,7 +29,7 @@ void *send_heart_beats(void *duration) {
       for(i = 0; i < mcast_num_members; i++) {
         if (my_id != mcast_members[i]) {
           debugprintf("%d sending message to %d\n",my_id, mcast_members[i]);
-          usend(mcast_members[i], message, strlen(message)+1);
+          usend(mcast_members[i], message, strlen(message) + 1);
         }
       }
       pthread_mutex_unlock(&member_lock);
@@ -42,14 +39,8 @@ void *send_heart_beats(void *duration) {
 
 void mcast_join(int member) {
   int i;
-
-  for (i = 0; i < mcast_ping_num_members; i++) {
-    if (mcast_pings[i].pid == member) 
-      return;
-  }
-
-  // receive() and flush_beats_threads can try to add the same member one after
-  // the another. Add only if the new member is being added for the first time. 
+  pthread_mutex_lock(&member_lock);
+  /* Start recording heart beats of new member.*/
   debugprintf("New member %d in pings at process %d\n", member, my_id);
   if (mcast_ping_num_members == mcast_ping_mem_alloc) { /* make sure there's
                                                            enough space */
@@ -63,9 +54,9 @@ void mcast_join(int member) {
   }
   // Record a dummy heart beat. If the process does not send another heart 
   // beat in send_duration, it will declared as failed.
-  mcast_pings[mcast_ping_num_members].pid = member;
-  mcast_pings[mcast_ping_num_members].ping = 1;
+  mcast_pings[mcast_ping_num_members] = 1;
   mcast_ping_num_members++;
+  pthread_mutex_unlock(&member_lock);
 }
 
 
@@ -80,12 +71,12 @@ void *flush_received_beats(void *duration) {
       // If a process other than myself has not sent me a heart beat for
       // receive_duration, I declare it as failed.
       for (i = 0; i < mcast_ping_num_members; i++) {
-        if (mcast_pings[i].pid != my_id) {
-          if (mcast_pings[i].ping) {
-            mcast_pings[i].ping = 0;
+        if (mcast_members[i] != my_id) {
+          if (mcast_pings[i]) {
+            mcast_pings[i] = 0;
           } else {
             fprintf(stderr, "Process %d has detected that process %d has crashed!\n", 
-                    my_id, mcast_pings[i].pid); 
+                    my_id, mcast_members[i]); 
             // Bring the last process at this location and reduce the total
             // number. Inspect the new process at i.
             mcast_members[i] = mcast_members[mcast_num_members - 1];
@@ -134,17 +125,10 @@ void receive(int source, const char *message, int len) {
 
     // Record a hear beat received.
     for (i = 0; i < mcast_ping_num_members; i++) {
-      if (mcast_pings[i].pid == source) {
-        mcast_pings[i].ping = 1;
+      if (mcast_members[i] == source) {
+        mcast_pings[i] = 1;
         break;
       }
-    }
-    // If this is the first heart beat received, start recording the ping 
-    // at the last position of mcast_pings[].
-    if (i == mcast_ping_num_members) {
-      debugprintf("\nIn an ideal world, this should never print %d %d\n",
-          mcast_ping_num_members, source);
-      mcast_join(source);
     }
 
     pthread_mutex_unlock(&member_lock);
