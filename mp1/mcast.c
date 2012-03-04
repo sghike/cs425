@@ -12,6 +12,7 @@ int mcast_ping_num_members; // Different variable needed since call to
 int mcast_ping_mem_alloc;   // Same as above.
 int flush_duration;
 int send_duration;
+int num_queue;
 
 typedef int mcast_ping;
 mcast_ping *mcast_pings;
@@ -19,12 +20,30 @@ mcast_ping *mcast_pings;
 typedef struct {
   char *str;
   int seq;
+  int vector[16];
 } mcast_msg;
 mcast_msg *mcast_msgs;
-int my_seq;
 
-void put_in_queue(int msg_src_seq);
+typedef struct queueentry queue_entry;
+
+struct queueentry{
+  mcast_msg msg;
+  queue_entry* next;
+  queue_entry* prev;
+};
+queue_entry *queue_tail;
+queue_entry *queue_head;
+    
+
+int my_seq;
+// my vector table
+int my_vector_table[16];
+int my_vector_num;
+
+void my_vector_print();
+void put_in_queue(int index);
 void respond_to_neg_ack();
+void pop_out_queue(int source, int index, queue_entry* queue_ptr);
 
 void *send_heart_beats(void *duration) {
     int i;
@@ -64,13 +83,18 @@ void mcast_join(int member) {
           exit(1);
       }
   }
-  // Record a dummy heart beat. If the process does not send another heart 
+  // Record a dummy heart beat. If the process does not send another heart
   // beat in send_duration, it will declared as failed.
   mcast_pings[mcast_ping_num_members] = 1;
   // Initialize the message field to a default value. The algorithm assumes that
   // this default message has already been delivered by my_id.
   mcast_msgs[mcast_ping_num_members].str = NULL;
   mcast_msgs[mcast_ping_num_members].seq = 0;
+  for(i = 0; i < 16; i++)
+  {
+  	//Assumes no transaction is happening AND nothing is in the queue of the process that is being copied
+  	mcast_msgs[mcast_ping_num_members].vector[i] = mcast_msgs[mcast_ping_num_members-1].vector[i] ;
+  }
   mcast_ping_num_members++;
   pthread_mutex_unlock(&member_lock);
 }
@@ -110,14 +134,32 @@ void *flush_received_beats(void *duration) {
 }
 
 void multicast_init(void) {
+	int i = 0;
     mcast_ping_num_members = 0;
     mcast_ping_mem_alloc = 16;
     mcast_pings = (mcast_ping *)malloc(sizeof(mcast_ping) * 
                                        mcast_ping_mem_alloc);
     mcast_msgs = (mcast_msg *)malloc(sizeof(mcast_msg) * mcast_ping_mem_alloc);
+    num_queue = 0;
+    queue_tail = NULL;
+    queue_head =NULL;
+    
     my_seq = 0;
-
+    
     unicast_init();
+    
+    //init my vector table
+    for (i = 0; i < 16; i++)
+    {
+    	my_vector_table[i] = 0;
+    }
+    
+    //find my vector number in the vector table
+    for (i = 0; i < mcast_ping_num_members; i++)
+    {
+    	if (mcast_members[i] == my_id) 
+    		my_vector_num = i;
+    }
 
     // Create a thread to send heart beats to other processes.
     send_duration = 10;
@@ -165,6 +207,85 @@ int find_msg_seq(const char *message) {
   int val = atoi(str);
   free(str);
   return val;
+}	
+
+char* find_msg_str(const char *message)
+{
+	int i, j;
+	char *str = (char *)malloc(sizeof(char) * 100);
+	for (i = 0; i < strlen(message); i++) {
+    if (message[i] == ';') break;
+    str[i] = message[i];
+  	}
+  	str[i] = '\0';
+  	
+  	int msg_len = atoi(str);
+  	
+  	//debugprintf("length is %s\n", str);
+  	//debugprintf("msg = %d\n", msg_len);
+  	for (j = 0, i = i + 1; i < strlen(message); i++, j++) {
+    	if(message[i] == ';') 
+    	{
+    		debugprintf("i = %d\n", i);
+    		break;
+    	}
+    	str[j] = message[i];
+  	}
+  	//debugprintf("j = %d\n", j);
+  	str[j] = '\0';
+  	//debugprintf("%s\n", message);
+  	//debugprintf("%s\n", str);
+  	
+  	return str;
+	
+}
+
+int find_msg_vector(const char *message, int number)
+{
+	int val;
+	int i, j;
+	int k = 0;
+	int l = 0;
+	char str[100];
+	for (i = 0; i < strlen(message); i++) {
+    if (message[i] == ';') break;
+    str[i] = message[i];
+ 	}
+  	str[i] = '\0';
+
+  	int msg_len = atoi(str);
+  	for (j = 0, i = i + msg_len + 2; i < strlen(message); i++, j++) {
+    	if (message[i] == ';') break;
+    	str[j] = message[i];
+  	}
+  	str[j] = '\0';
+  	
+  	//debugprintf("number = %d\n", number);
+  	//debugprintf("I is %d, vector is %c\n", i+1, message[i+1]);
+  	for (i = i+1; i < strlen(message) ;i++)
+  	{
+  		if(message[i] == ';') 
+  		{
+  			l++;
+  			//debugprintf("l = %d\n", l);
+  			if(l > number)
+  				break;
+  		}
+  		else
+  		{
+  			if(l == number)
+  			{
+  				str[k] = message[i];
+  				k++;
+  			}
+  		}
+  	}
+  	str[k] = '\0';
+  	//debugprintf("value before atoi %s\n", str);
+  	val = atoi(str);
+  	//debugprintf("value is %d\n", val);
+	//free(str);
+	return val;
 }
 
 void neg_ack(int node, int node_msg_seq, int source, int index) {
@@ -235,6 +356,7 @@ void send_neg_ack(const char *message, int source, int src_index) {
 void receive(int source, const char *message, int len) {
     assert(message[len-1] == 0);
     int i;
+    int j;
     char str[4];
     for(i = 0; i < 3 && i < strlen(message); i++) {
       str[i] = message[i];
@@ -258,13 +380,43 @@ void receive(int source, const char *message, int len) {
       int index = -1;
       int known_src_seq = find_recorded_seq(source, &index);
       assert((known_src_seq != -1) && (index != -1));
-    
-      if (msg_src_seq == (known_src_seq + 1)) {
+      
+      //copy vector table from message
+      for(j = 0; j < 16; j++)
+      {
+      	mcast_msgs[index].vector[j] = find_msg_vector(message, j);
+      }
+      
+      //copy the message
+      mcast_msgs[index].str = find_msg_str(message);
+      
+      debugprintf("Receving inc message\n");
+      my_vector_print();
+      debugprintf("INC message vector\n");
+      for(i = 0; i < 16; i++)
+		debugprintf("[%d] ", mcast_msgs[index].vector[i]);
+	  debugprintf("\n");
+      
+      // Casual ordering with vector timestamp
+      // msg_src_seq == (known_src_seq + 1)
+      if (check_vector_table(mcast_msgs[index].vector, index)!= 0) {
         debugprintf("Delivering a message of seq %d\n",msg_src_seq);
-        deliver(source, message);
+        deliver(source, mcast_msgs[index].str);
+        free(mcast_msgs[index].str);
         mcast_msgs[index].seq++;
-      } else if (msg_src_seq > (known_src_seq + 1)) {
-          put_in_queue(msg_src_seq);
+        my_vector_table[index]++;
+        
+        // testing conditions
+        //mcast_msgs[index].vector[2] = 1;
+        
+        
+        my_vector_print();
+        if(num_queue != 0)
+        	pop_out_queue(source, index, queue_head);
+      } 
+      // msg_src_seq > (known_src_seq + 1) &&
+      else if (check_vector_table(mcast_msgs[index].vector, index) == 0) {
+          put_in_queue(index);
       } /* else {
          This message was already delivered. Do nothing.
       } */
@@ -289,10 +441,22 @@ void multicast(const char *message) {
 
     // Increment sequence number.
     my_seq++;
+    // Increment my vector table
+    my_vector_table[my_vector_num]++;
+    
     sprintf(str, "%d;", my_seq);
     // Add my_seq to message.
     strcat(buf, str);
     t -= strlen(str);
+    
+    // Add my vector table to message
+    for(i = 0; i < 16; i++)
+    {
+    	sprintf(str, "%d;", my_vector_table[i]);
+    	strcat(buf,str);
+    	t -= strlen(str);
+    }
+    
 
     // Piggyback acknowledgements on message.
     for (i = 0; i < mcast_ping_num_members; i++) {
@@ -306,9 +470,10 @@ void multicast(const char *message) {
     }
 
     debugprintf("Msg = %s\n", buf);
-    // Multicast.
+    // Multicast except to me
     for (i = 0; i < mcast_num_members; i++) {
-        usend(mcast_members[i], buf, strlen(buf)+1);
+        if(mcast_members[i] != my_id)
+        	usend(mcast_members[i], buf, strlen(buf)+1);
     }
 
     pthread_mutex_unlock(&member_lock);
@@ -321,6 +486,113 @@ void respond_to_neg_ack(int source, const char *message) {
   debugprintf("\n Responding to negative ack %s\n", message);
 }
 
-void put_in_queue(int msg_src_seq) {
-  debugprintf("Putting in queue message seq %d\n", msg_src_seq);
+void put_in_queue(int index) {
+	debugprintf("Putting in queue message from process index %d\n", index);
+	queue_entry* new_entry;
+	int i;
+	
+	if(num_queue == 0)
+	{
+		
+		queue_tail = (queue_entry *)malloc(sizeof(queue_entry));
+    	
+    	queue_tail->next = NULL;
+    	queue_tail->prev = NULL;
+    	
+    	new_entry = queue_tail;
+    	queue_head = queue_tail;
+    }
+    else
+	{
+		new_entry = (queue_entry *)malloc(sizeof(queue_entry));
+  		queue_tail->next = new_entry;
+		new_entry->prev = queue_tail;
+		new_entry->next = NULL;
+	}
+  	
+	new_entry->msg.str = mcast_msgs[index].str;
+	new_entry->msg.seq = mcast_msgs[index].seq;
+	
+	for(i = 0; i < 16; i++)
+	  	new_entry->msg.vector[i] = mcast_msgs[index].vector[i];
+    
+	queue_tail = new_entry;
+	num_queue++;
 }
+
+void pop_out_queue(int source, int index, queue_entry* queue_ptr) {
+	debugprintf("Popping out queue entry from process index %d\n", index);
+	int check;
+	queue_entry* temp;
+	queue_entry* ptr_to_free;
+	
+	//check if there is any entry in the queue
+	if(queue_ptr == NULL)
+		return;
+	//check if you can pop and deliver
+	check = check_vector_table(queue_ptr->msg.vector);
+	if(check == 0)
+	{
+		deliver(source, queue_ptr->msg.str);
+		num_queue--;
+		ptr_to_free = queue_ptr;
+		temp = queue_ptr->prev;
+		queue_ptr = queue_ptr->next;
+		queue_ptr->prev = temp;
+		if(temp == NULL)
+			queue_head = queue_ptr;
+		if(queue_ptr->next == NULL)
+			queue_tail = queue_ptr;	
+		if(queue_ptr != NULL)
+			pop_out_queue(source, index, queue_head);
+		free(ptr_to_free->msg.str);
+		free(ptr_to_free);
+	}
+	else
+	{
+		queue_ptr = queue_ptr->next;
+		if(queue_ptr != NULL)
+			pop_out_queue(source, index, queue_ptr);
+	}
+	return;
+}
+
+
+
+int check_vector_table(int* vector, int index) {
+	int i;
+	int send = -1;
+	
+	for(i = 0; i < 16; i++)
+	{
+		if(i == index)
+		{	
+			if(vector[i] == my_vector_table[i] + 1  )
+				send = 0;
+			else
+				send = -1;
+		}
+		else
+		{
+			if(my_vector_table[i] >= vector[i])
+				send = 0;
+			else 
+				send = -1;					
+		}
+	}
+	return send;
+}
+
+void my_vector_print()
+{
+	int i;
+	debugprintf("My current vector table\n");
+	for(i = 0; i < 16; i++)
+		debugprintf("[%d] ", my_vector_table[i]);
+	debugprintf("\n");
+}
+
+
+
+
+
