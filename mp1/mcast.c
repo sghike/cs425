@@ -19,7 +19,7 @@ mcast_ping *mcast_pings;
 int *alive;
 
 // Causally ordered reliable multicast.
-int num_queue;
+int buffer_num_queue;
 int my_seq;
 int *my_vector;
 
@@ -37,8 +37,8 @@ struct _queue_entry_ {
   queue_entry *next;
   queue_entry *prev;
 };
-queue_entry *queue_tail;
-queue_entry *queue_head;
+queue_entry *buffer_queue_tail;
+queue_entry *buffer_queue_head;
     
 void my_vector_print();
 int find_src_index(int source);
@@ -48,8 +48,9 @@ char * strip_msg(const char *message, int msg_len);
 void send_neg_ack(const char *message, int msg_len, int source, int src_index,
                   int src_seq);
 void respond_to_neg_ack(int source, const char *message);
-void put_in_buffer_queue(const char *msg_str, int msg_len, int source, 
-                         int *msg_vector, int msg_vector_len, int src_seq);
+void push_to_queue(queue_entry **head, queue_entry **tail, int *num_queue,
+                   const char *msg_str, int msg_len, int source, 
+                   int *msg_vector, int msg_vector_len, int src_seq);
 void remove_and_deliver_from_buffer_queue(queue_entry *queue_ptr);
 int ready_for_delivery(int *msg_vector, int msg_vector_len, int msg_src_seq, 
                        int src_index);
@@ -138,9 +139,9 @@ void multicast_init(void) {
                                        mcast_ping_mem_alloc);
     my_vector = (int *)calloc(mcast_ping_mem_alloc, sizeof(int));
     alive = (int *)calloc(mcast_ping_mem_alloc, sizeof(int));
-    num_queue = 0;
-    queue_tail = NULL;
-    queue_head =NULL;
+    buffer_num_queue = 0;
+    buffer_queue_tail = NULL;
+    buffer_queue_head =NULL;
     my_seq = 0;
     
     unicast_init();
@@ -201,11 +202,12 @@ void receive(int source, const char *message, int len) {
 //        deliver(source, msg_str);
         my_vector[src_index]++;
         
-        if (num_queue != 0)
-          remove_and_deliver_from_buffer_queue(queue_head);
+        if (buffer_num_queue != 0)
+          remove_and_deliver_from_buffer_queue(buffer_queue_head);
       } else if (deliver_buffer_discard == 1) {
-          put_in_buffer_queue(msg_str, msg_len, source, msg_vector, 
-                              msg_vector_len, msg_src_seq);
+          push_to_queue(&buffer_queue_head, &buffer_queue_tail,
+                        &buffer_num_queue, msg_str, msg_len, source, msg_vector,
+                        msg_vector_len, msg_src_seq);
       } else {
         /* This message was already delivered. Discard it.*/
       } 
@@ -336,15 +338,14 @@ void neg_ack(int node_index, int msg_vector_val, int source, int src_index,
   int ask, reqst, reqd;
   int *missing;
   int num_missing;
-  printf("msg_vector_val = %d\n", msg_vector_val);
   
   if (node_index == src_index) {
     reqst = (src_seq > (my_vector[node_index] + 1));
-    missing = check_missing(queue_head, source, my_vector[node_index], 
+    missing = check_missing(buffer_queue_head, source, my_vector[node_index], 
                             src_seq - 1, &num_missing);
   } else {
     reqst = (msg_vector_val > my_vector[node_index]);
-    missing = check_missing(queue_head, source, my_vector[node_index],
+    missing = check_missing(buffer_queue_head, source, my_vector[node_index],
                             msg_vector_val, &num_missing);
   }
 
@@ -408,8 +409,9 @@ void respond_to_neg_ack(int source, const char *message) {
   debugprintf("\n Responding to negative ack %s\n", message);
 }
 
-void put_in_buffer_queue(const char *msg_str, int msg_len, int source, 
-                         int *msg_vector, int msg_vector_len, int src_seq) {
+void push_to_queue(queue_entry **head, queue_entry **tail, int *num_queue,
+                   const char *msg_str, int msg_len, int source, 
+                   int *msg_vector, int msg_vector_len, int src_seq) {
   debugprintf("Buffering in queue message from process %d of seq %d\n", source,
               src_seq);
   queue_entry *new_entry;
@@ -425,19 +427,19 @@ void put_in_buffer_queue(const char *msg_str, int msg_len, int source,
   new_entry->msg.vector_len = msg_vector_len;
   new_entry->msg.src_seq = src_seq;
 
-  if(num_queue == 0) {
+  if(*num_queue == 0) {
     new_entry->next = NULL;
     new_entry->prev = NULL;
-    queue_tail = new_entry;
-    queue_head = queue_tail;
+    *tail = new_entry;
+    *head = new_entry;
   } else {
-    new_entry->prev = queue_tail;
+    new_entry->prev = *tail;
     new_entry->next = NULL;
-    queue_tail->next = new_entry;
-    queue_tail = new_entry;
+    (*tail)->next = new_entry;
+    *tail = new_entry;
   }
   
-  num_queue++;
+  *num_queue++;
 }
 
 /* Recursive function to deliver messages from the buffer queue. */
@@ -462,21 +464,21 @@ void remove_and_deliver_from_buffer_queue(queue_entry *queue_ptr) {
     if (temp != NULL) 
       temp->next = queue_ptr;
     else 
-      queue_head = queue_ptr;
+      buffer_queue_head = queue_ptr;
     if (queue_ptr != NULL) {
       queue_ptr->prev = temp;
       if (queue_ptr->next == NULL) 
-        queue_tail = queue_ptr;
+        buffer_queue_tail = queue_ptr;
     }
     
     free(ptr_to_free->msg.str);
     free(ptr_to_free->msg.vector);
     free(ptr_to_free);
-    num_queue--;
+    buffer_num_queue--;
    
     // Delivering this message might have made another messafe available for
     // delivery, hence scan from the beginning of buffer queue.
-    remove_and_deliver_from_buffer_queue(queue_head);
+    remove_and_deliver_from_buffer_queue(buffer_queue_head);
   } else {
     remove_and_deliver_from_buffer_queue(queue_ptr->next);
   }
