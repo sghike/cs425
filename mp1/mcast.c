@@ -357,7 +357,7 @@ void neg_ack(int node_index, int msg_vector_val, int source, int src_index,
     } else { // No visible source of required messages.
       return;
     }
-    if (num_missing > 0) {
+    if (num_missing) {
       char *buf = (char *)malloc(sizeof(char) * 20);
       // Send negative ack for each missing message.
       for (i = 0; i < num_missing; i++) {
@@ -520,5 +520,34 @@ void my_vector_print()
    the buffer queue.*/
 int * check_missing(queue_entry *ptr, int source, int last_delivered, 
                     int missing_upto, int *num_missing) {
+  int i, j;
+  int mismatch = missing_upto - last_delivered;
+  int count = mismatch;
+  int *candidates = (int *)malloc(mismatch * sizeof(int));
+  for (i = 0; i < mismatch; i++) {
+    candidates[i] = last_delivered + 1 + i;
+  }
+
+  while (ptr) {
+    if (ptr->msg.source == source) {
+      candidates[ptr->msg.src_seq - 1 - last_delivered] = -1;
+      count--;
+    }
+    ptr = ptr->next;
+  }
+
+  *num_missing = count;
+  int *missing_seq = NULL;
+  if (count) {
+    missing_seq = (int *)malloc(count * sizeof(int));
+    for (i = 0, j = 0; i < mismatch; i++) {
+      if (candidates[i] != -1) {
+        missing_seq[j++] = candidates[i];
+      }
+    }
+  }
+
+  free(candidates);
+  return missing_seq;
 }
 
