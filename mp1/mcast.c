@@ -62,6 +62,10 @@ int ready_for_delivery(int *msg_vector, int msg_vector_len, int msg_src_seq,
                        int src_index);
 int * check_missing(queue_entry *ptr, int source, int last_delivered,
                     int missing_upto, int *num_missing);
+mcast_msg * find_message(queue_entry *ptr, int source, int src_seq);
+void store_sent_message(const char *message);
+void store_deliv_message(const char *msg_str, int msg_len, int source, 
+                         int *msg_vector, int msg_vector_len, int src_seq);
 
 
 void *send_heart_beats(void *duration) {
@@ -253,6 +257,7 @@ void multicast(const char *message) {
     my_vector[my_vector_num]++;
 
     pthread_mutex_lock(&member_lock);
+    
     // Append the number of mcast members I have seen until now, included the
     // crashed ones.
     sprintf(str, "%d;", mcast_ping_num_members);
@@ -273,12 +278,14 @@ void multicast(const char *message) {
     debugprintf("Msg = %s\n", buf);
     // Multicast to everyone including me.
     for (i = 0; i < mcast_ping_num_members; i++) {
-      if(alive[i] && (mcast_members[i] != my_id)) usend(mcast_members[i], buf, strlen(buf) + 1);
+      if(alive[i] && (mcast_members[i] != my_id)) usend(mcast_members[i], buf, 
+                                                        strlen(buf) + 1);
     }
-    pthread_mutex_unlock(&member_lock);
     store_sent_message(message);
     // Deliver to myself.
     deliver(my_id, message); 
+    
+    pthread_mutex_unlock(&member_lock);
     
     free(str);
     free(buf);
@@ -563,7 +570,7 @@ int * check_missing(queue_entry *ptr, int source, int last_delivered,
   return missing_seq;
 }
 
-mcast_msg * find_message(queue_ptr *ptr, int source, int src_seq) {
+mcast_msg * find_message(queue_entry *ptr, int source, int src_seq) {
   while (ptr) {
     if (ptr->msg.source == source && ptr->msg.src_seq == src_seq) {
       return &ptr->msg;
@@ -573,19 +580,18 @@ mcast_msg * find_message(queue_ptr *ptr, int source, int src_seq) {
   return NULL;
 }
 
-void store_sent_message(const char *message)
-{
+void store_sent_message(const char *message) {
     debugprintf("Storing sent message");
     push_to_queue(&sent_queue_head, &sent_queue_tail, &sent_num_queue,
-                    message, strlen(message), my_id, my_vector, mcast_ping_num_members, my_seq);
+                  message, strlen(message), my_id, my_vector, 
+                  mcast_ping_num_members, my_vector[my_vector_num]);
     return;
 }
 
 void store_deliv_message(const char *msg_str, int msg_len, int source, 
-                   int *msg_vector, int msg_vector_len, int src_seq)
-{
+                         int *msg_vector, int msg_vector_len, int src_seq) {
     push_to_queue(&deliv_queue_head, &deliv_queue_tail, &deliv_num_queue, 
-                        msg_str, msg_len, source, msg_vector,
-                        msg_vector_len, src_seq);
+                  msg_str, msg_len, source, msg_vector, msg_vector_len, 
+                  src_seq);
     return;
 }
