@@ -27,10 +27,10 @@ int my_vector_num;
 
 typedef struct {
   char *str;
-  int source;
+  int generator;
+  int gen_seq;
   int *vector;
   int vector_len;
-  int src_seq;
 } mcast_msg;
 
 typedef struct _queue_entry_ queue_entry;
@@ -47,25 +47,24 @@ queue_entry *deliv_queue_head;
 queue_entry *deliv_queue_tail;
     
 void my_vector_print();
-int find_src_index(int source);
+int find_process_index(int source);
 void parse_msg(const char *message, int source, int *msg_len, int **msg_vector, 
-               int *src_seq, int *msg_vector_len);
+               int *msg_vector_len, int *generator, int *gen_seq);
 char * strip_msg(const char *message, int msg_len);
-void send_neg_ack(const char *message, int msg_len, int source, int src_index,
-                  int src_seq);
-void respond_to_neg_ack(int source, const char *message);
+void send_neg_ack(const char *message, int msg_len, int src_index);
+void respond_to_neg_ack(int requestor, int generator, int gen_seq);
 void push_to_queue(queue_entry **head, queue_entry **tail, int *num_queue,
-                   const char *msg_str, int msg_len, int source, 
-                   int *msg_vector, int msg_vector_len, int src_seq);
+                   const char *msg_str, int msg_len, int *msg_vector, 
+                   int msg_vector_len, int generator, int gen_seq);
 void remove_and_deliver_from_buffer_queue(queue_entry *queue_ptr);
-int ready_for_delivery(int *msg_vector, int msg_vector_len, int msg_src_seq, 
+int ready_for_delivery(int *msg_vector, int msg_vector_len, int msg_gen_seq, 
                        int src_index);
 int * check_missing(queue_entry *ptr, int source, int last_delivered,
                     int missing_upto, int *num_missing);
-mcast_msg * find_message(queue_entry *ptr, int source, int src_seq);
+mcast_msg * find_message(queue_entry *ptr, int generator, int gen_seq);
 void store_sent_message(const char *message);
-void store_deliv_message(const char *msg_str, int msg_len, int source, 
-                         int *msg_vector, int msg_vector_len, int src_seq);
+void store_deliv_message(const char *msg_str, int msg_len, int *msg_vector, 
+                         int msg_vector_len, int generator, int gen_seq);
 
 
 void *send_heart_beats(void *duration) {
@@ -93,7 +92,7 @@ void mcast_join(int member) {
   int i;
   pthread_mutex_lock(&member_lock);
   /* Start recording heart beats and messages of new member.*/
-  debugprintf("New member %d in pings at process %d\n", member, my_id);
+  fprintf(stderr, "New member %d in pings at process %d\n", member, my_id);
   if (mcast_ping_num_members == mcast_ping_mem_alloc) { /* make sure there's
                                                            enough space */
       mcast_ping_mem_alloc *= 2;
@@ -196,10 +195,29 @@ void receive(int source, const char *message, int len) {
     str[i] = '\0';
 
     pthread_mutex_lock(&member_lock);
-    // Record a hear beat received.
     if (strcmp(str, "NEG") == 0) {
-      respond_to_neg_ack(source, message);
+      char *buf = (char *)malloc(sizeof(char) * 20);
+      int generator, reqst_seq;
+      for (i = 4, j = 0; i < strlen(message); i++) {
+        if (message[i] == ';') {
+          buf[j] = '\0';
+          generator = atoi(buf);
+          break;
+        } else {
+          buf[j++] = message[i];
+        }
+      }
+      for (i = i + 1, j = 0; i < strlen(message); i++) {
+        if (message[i] == ';') {
+          buf[j] = '\0';
+          reqst_seq = atoi(buf);
+        } else {
+          buf[j++] = message[i];
+        }
+      }
+      respond_to_neg_ack(source, generator, reqst_seq);
     } else if (strcmp(message, "HeartBeat from ") == 0) {
+      // Record a hear beat received.
       for (i = 0; i < mcast_ping_num_members; i++) {
         if (mcast_members[i] == source) {
           mcast_pings[i] = 1;
@@ -208,35 +226,37 @@ void receive(int source, const char *message, int len) {
       }
     } else {
       int msg_len;
-      int msg_src_seq = -1;
+      int msg_gen_seq = -1;
       int msg_vector_len = -1;
+      int generator;
       int *msg_vector;
-      parse_msg(message, source, &msg_len, &msg_vector, &msg_src_seq, 
-                &msg_vector_len);
+      parse_msg(message, source, &msg_len, &msg_vector, &msg_vector_len, 
+                &generator, &msg_gen_seq);
       char *msg_str = strip_msg(message, msg_len);
 
-      int src_index = find_src_index(source);
+      int gen_index = find_process_index(generator);
       
       // Casual ordering with vector timestamp.
       int deliver_buffer_discard = ready_for_delivery(msg_vector, 
                                                       msg_vector_len, 
-                                                      msg_src_seq, src_index);
+                                                      msg_gen_seq, gen_index);
       if (deliver_buffer_discard == 0) {
-        store_deliv_message(msg_str, msg_len, source, msg_vector, msg_vector_len, msg_src_seq);
-	deliver(source, message);
-//        deliver(source, msg_str);
-        my_vector[src_index]++;
+        deliver(generator, msg_str);
+        my_vector[gen_index]++;
+        store_deliv_message(msg_str, msg_len, msg_vector, msg_vector_len, 
+                            generator, msg_gen_seq);
         
         if (buffer_num_queue != 0)
           remove_and_deliver_from_buffer_queue(buffer_queue_head);
       } else if (deliver_buffer_discard == 1) {
           push_to_queue(&buffer_queue_head, &buffer_queue_tail,
-                        &buffer_num_queue, msg_str, msg_len, source, msg_vector,
-                        msg_vector_len, msg_src_seq);
+                        &buffer_num_queue, msg_str, msg_len, msg_vector,
+                        msg_vector_len, generator, msg_gen_seq);
       } else {
         /* This message was already delivered. Discard it.*/
       } 
-      send_neg_ack(message, msg_len, source, src_index, msg_src_seq);
+      int src_index = find_process_index(source);
+      send_neg_ack(message, msg_len, src_index);
     }
     pthread_mutex_unlock(&member_lock);
 }
@@ -257,7 +277,11 @@ void multicast(const char *message) {
     my_vector[my_vector_num]++;
 
     pthread_mutex_lock(&member_lock);
-    
+    // Add generator_index to message.
+    sprintf(str, "%d;", my_vector_num);
+    strcat(buf, str);
+    t -= strlen(str);
+
     // Append the number of mcast members I have seen until now, included the
     // crashed ones.
     sprintf(str, "%d;", mcast_ping_num_members);
@@ -275,11 +299,10 @@ void multicast(const char *message) {
       }
     }
 
-    debugprintf("Msg = %s\n", buf);
     // Multicast to everyone including me.
     for (i = 0; i < mcast_ping_num_members; i++) {
-      if(alive[i] && (mcast_members[i] != my_id)) usend(mcast_members[i], buf, 
-                                                        strlen(buf) + 1);
+      if(alive[i] && (mcast_members[i] != my_id)) 
+        usend(mcast_members[i], buf, strlen(buf) + 1);
     }
     store_sent_message(message);
     // Deliver to myself.
@@ -293,7 +316,7 @@ void multicast(const char *message) {
 
 /* Supporting functions from here on. */
 
-int find_src_index(int source) {
+int find_process_index(int source) {
   int i;
   for (i = 0; i < mcast_ping_num_members; i++) {
     if (mcast_members[i] == source) {
@@ -304,7 +327,7 @@ int find_src_index(int source) {
 }
 
 void parse_msg(const char *message, int source, int *msg_len, int **msg_vector, 
-               int *src_seq, int *msg_vector_len) {
+               int *msg_vector_len, int *generator, int *gen_seq) {
   int i, j;
   char *str = (char *)malloc(sizeof(char) * 20);
   for (i = 0; i < strlen(message); i++) {
@@ -312,16 +335,29 @@ void parse_msg(const char *message, int source, int *msg_len, int **msg_vector,
     str[i] = message[i];
   }
   str[i] = '\0';
-
   *msg_len = atoi(str);
+
   for (j = 0, i = i + (*msg_len) + 2; i < strlen(message); i++, j++) {
+    if (message[i] == ';') break;
+    str[j] = message[i];
+  }
+  str[j] = '\0';
+  int gen_index = atoi(str);
+  *generator = mcast_members[gen_index];
+
+  for (j = 0, i = i + 1; i < strlen(message); i++, j++) {
     if (message[i] == ';') break;
     str[j] = message[i];
   }
   str[j] = '\0';
   *msg_vector_len = atoi(str);
 
+  *generator = mcast_members[gen_index];
   *msg_vector = (int *)calloc((*msg_vector_len), sizeof(int));
+  if (*msg_vector == NULL) {
+    perror("calloc");
+    exit(1);
+  }
   int curr = 0;
   for (j = 0, i = i + 1; i < strlen(message); i++) {
     if (message[i] == ';') {
@@ -332,11 +368,7 @@ void parse_msg(const char *message, int source, int *msg_len, int **msg_vector,
       str[j++] = message[i];
     }
   }
-
-  for (i = 0; i < *msg_vector_len; i++) {
-    if (mcast_members[i] == source)
-      *src_seq = (*msg_vector)[i];
-  }
+  *gen_seq = (*msg_vector)[gen_index];
 
   free(str);
 }
@@ -357,8 +389,7 @@ char * strip_msg(const char *message, int msg_len) {
   return str;
 }
 
-void neg_ack(int node_index, int msg_vector_val, int source, int src_index,
-             int src_seq) {
+void neg_ack(int node_index, int msg_vector_val, int src_index) {
   int i;
   int ask, reqst, reqd;
   int *missing;
@@ -374,15 +405,16 @@ void neg_ack(int node_index, int msg_vector_val, int source, int src_index,
     } else { // No visible source of required messages.
       return;
     }
-    missing = check_missing(buffer_queue_head, source, my_vector[node_index],
-                            msg_vector_val, &num_missing);
+    missing = check_missing(buffer_queue_head, mcast_members[node_index], 
+                            my_vector[node_index], msg_vector_val, 
+                            &num_missing);
     if (num_missing) {
       char *buf = (char *)malloc(sizeof(char) * 20);
       // Send negative ack for each missing message.
       for (i = 0; i < num_missing; i++) {
-        sprintf(buf, "NEG;%d;", missing[i]);
-        debugprintf("\nsending %d a negative ack for %d seq no.\n", ask,
-                      missing[i]);
+        sprintf(buf, "NEG;%d;%d;", mcast_members[node_index], missing[i]);
+        debugprintf("Sending %d a negative ack for %d seq no.\n", ask,
+                    missing[i]);
         usend(mcast_members[ask], buf, strlen(buf) + 1);
       }
       free(buf);
@@ -391,11 +423,10 @@ void neg_ack(int node_index, int msg_vector_val, int source, int src_index,
   }
 }
 
-void send_neg_ack(const char *message, int msg_len, int source, int src_index,
-                  int src_seq) {
+void send_neg_ack(const char *message, int msg_len, int src_index) {
   int i, j;
   int msg_vector_val;
-  // Skip msg_len, msg_str, src_seq, msg_vector_len.
+  // Skip msg_len, msg_str, gen_seq, msg_vector_len.
   for (i = 0; i < strlen(message); i++) {
     if (message[i] == ';') break;
   }
@@ -413,38 +444,90 @@ void send_neg_ack(const char *message, int msg_len, int source, int src_index,
     if (message[i] == ';') {
       buf[j] = '\0';
       msg_vector_val = atoi(buf);
-      neg_ack(curr, msg_vector_val, source, src_index, src_seq);
+      neg_ack(curr, msg_vector_val, src_index);
       j = 0; 
       curr++;
     } else {
       buf[j++] = message[i];
     }
   }
- 
   free(buf);
 }
 
-void respond_to_neg_ack(int source, const char *message) {
-  debugprintf("\n Responding to negative ack %s\n", message);
+void respond_to_neg_ack(int requestor, int generator, int gen_seq) {
+  int i, generator_index;
+  mcast_msg *m;
+  debugprintf("Responding to negative ack of %d for message generated by %d of seq %d\n", requestor, generator, gen_seq);
+  if (generator == my_id) {
+    m = find_message(sent_queue_head, generator, gen_seq);
+    assert(m != NULL);
+  } else {
+    m = find_message(deliv_queue_head, generator, gen_seq);
+    assert(m != NULL);
+  }
+  
+  int msg_len = strlen(m->str);
+  char *str = (char *)malloc(sizeof(char) * 20);
+  sprintf(str, "%d", msg_len);
+  char *buf = (char *)malloc(sizeof(char) * (strlen(str) + msg_len + 103)); 
+  // First declare the length of message and then start the actual message, so
+  // that we can know where the message ends.
+  sprintf(buf, "%s;%s;", str, m->str);
+  int t = 100;
+  
+  // Add generator_index to message.
+  for (i = 0; i < mcast_ping_num_members; i++) {
+    if (mcast_members[i] == generator) {
+      generator_index = i;
+      break;
+    }
+  }
+  sprintf(str, "%d;", generator_index);
+  strcat(buf, str);
+  t -= strlen(str);
+
+  // Append the message vector length.
+  sprintf(str, "%d;", m->vector_len);
+  strcat(buf, str);
+  t -= strlen(str);
+  
+  // Add my vector table to message.
+  for(i = 0; i < m->vector_len; i++) {
+    sprintf(str, "%d;", m->vector[i]);
+    strcat(buf, str);
+    t -= strlen(str);
+    if (t < 0) {
+      buf = realloc(buf, sizeof(char) * (strlen(buf) + 100));
+      assert(buf != NULL);
+      t += 100;
+    }
+  }
+
+  if(alive[find_process_index(requestor)]) {
+    usend(requestor, buf, strlen(buf) + 1);
+  }
 }
 
 void push_to_queue(queue_entry **head, queue_entry **tail, int *num_queue,
-                   const char *msg_str, int msg_len, int source, 
-                   int *msg_vector, int msg_vector_len, int src_seq) {
-  debugprintf("Buffering in queue message from process %d of seq %d\n", source,
-              src_seq);
+                   const char *msg_str, int msg_len, int *msg_vector, 
+                   int msg_vector_len, int generator, int gen_seq) {
+  if (num_queue == &buffer_num_queue) {
+    debugprintf("Buffering in queue message generated by process %d of seq %d\n",
+                 generator, gen_seq);
+  }
+
   queue_entry *new_entry;
   int i;
   
   new_entry = (queue_entry *)malloc(sizeof(queue_entry));
   new_entry->msg.str = (char *)malloc((msg_len + 1) * sizeof(char));
   strcpy(new_entry->msg.str, msg_str);
-  new_entry->msg.source = source;
+  new_entry->msg.generator = generator;
+  new_entry->msg.gen_seq = gen_seq;
   new_entry->msg.vector = (int *)malloc(msg_vector_len * sizeof(int));
   for (i = 0; i < msg_vector_len; i++)
     new_entry->msg.vector[i] = msg_vector[i];
   new_entry->msg.vector_len = msg_vector_len;
-  new_entry->msg.src_seq = src_seq;
 
   if(*num_queue == 0) {
     new_entry->next = NULL;
@@ -458,23 +541,27 @@ void push_to_queue(queue_entry **head, queue_entry **tail, int *num_queue,
     *tail = new_entry;
   }
   
-  *num_queue++;
+  (*num_queue)++;
 }
 
 /* Recursive function to deliver messages from the buffer queue. */
 void remove_and_deliver_from_buffer_queue(queue_entry *queue_ptr) {
   // Base case.
   if (queue_ptr == NULL) return;
-
-  int src_index = find_src_index(queue_ptr->msg.source);
+  int gen_index = find_process_index(queue_ptr->msg.generator);
   // Check if you can pop and deliver.
   int check = ready_for_delivery(queue_ptr->msg.vector,
                                  queue_ptr->msg.vector_len,
-                                 queue_ptr->msg.src_seq, src_index);
+                                 queue_ptr->msg.gen_seq, gen_index);
   // Possible that a message could be ready for delivery, or it is a copy of an
   // already delivered message.
-  if (check == 0) 
-    deliver(queue_ptr->msg.source, queue_ptr->msg.str);
+  if (check == 0) {
+    deliver(queue_ptr->msg.generator, queue_ptr->msg.str);
+    my_vector[gen_index]++;
+    store_deliv_message(queue_ptr->msg.str, strlen(queue_ptr->msg.str), 
+                        queue_ptr->msg.vector, queue_ptr->msg.vector_len, 
+                        queue_ptr->msg.generator, queue_ptr->msg.gen_seq);
+  }
   if (check <= 0) { 
     queue_entry *ptr_to_free = queue_ptr;
     
@@ -505,18 +592,20 @@ void remove_and_deliver_from_buffer_queue(queue_entry *queue_ptr) {
 
 
 /* Return 1 if message is to be buffered, 0 if delivered, -1 if discarded.*/
-int ready_for_delivery(int *msg_vector, int msg_vector_len, int msg_src_seq, 
-                       int src_index) {
+int ready_for_delivery(int *msg_vector, int msg_vector_len, int msg_gen_seq, 
+                       int gen_index) {
   int i;
   int deliver_or_discard = 0;
 
   for (i = 0; i < msg_vector_len; i++) {
-    if (i == src_index) {
-      if (msg_src_seq > (my_vector[i] + 1)) 
+    if (i == gen_index) {
+      if (msg_gen_seq > (my_vector[i] + 1)) 
         return 1; // Buffer.
-      else if (msg_src_seq <= my_vector[i]) 
+      else if (msg_gen_seq <= my_vector[i]) {
         deliver_or_discard = -1; // If we have seen this sequence no. from this
                                  // source, it means we have seen this message.
+        debugprintf("Discarding message with generator_seq = %d because my vector value = %d\n", msg_gen_seq, my_vector[i]);
+      }
     } else {
       if (msg_vector[i] > my_vector[i]) 
         return 1; // Buffer.
@@ -537,7 +626,7 @@ void my_vector_print()
 /* Return the sequence numbers of messages from the given source, greater than 
    the last sequence number delivered from the source, and that are missing from
    the buffer queue.*/
-int * check_missing(queue_entry *ptr, int source, int last_delivered, 
+int * check_missing(queue_entry *ptr, int generator, int last_delivered, 
                     int missing_upto, int *num_missing) {
   int i, j;
   int mismatch = missing_upto - last_delivered;
@@ -548,8 +637,13 @@ int * check_missing(queue_entry *ptr, int source, int last_delivered,
   }
 
   while (ptr) {
-    if (ptr->msg.source == source) {
-      candidates[ptr->msg.src_seq - 1 - last_delivered] = -1;
+    // If the message has the same generator, sequence > last_delivered and upto
+    // missing_upto, and it has not already been marked in candidates[] as 
+    // present.
+    if ((ptr->msg.generator == generator) && (ptr->msg.gen_seq <= missing_upto)
+        && (ptr->msg.gen_seq > last_delivered) 
+        && (candidates[ptr->msg.gen_seq - 1 - last_delivered] != -1)) {
+      candidates[ptr->msg.gen_seq - 1 - last_delivered] = -1;
       count--;
     }
     ptr = ptr->next;
@@ -570,9 +664,9 @@ int * check_missing(queue_entry *ptr, int source, int last_delivered,
   return missing_seq;
 }
 
-mcast_msg * find_message(queue_entry *ptr, int source, int src_seq) {
+mcast_msg * find_message(queue_entry *ptr, int generator, int reqst_seq) {
   while (ptr) {
-    if (ptr->msg.source == source && ptr->msg.src_seq == src_seq) {
+    if (ptr->msg.generator == generator && ptr->msg.gen_seq == reqst_seq) {
       return &ptr->msg;
     }
     ptr = ptr->next;
@@ -581,17 +675,16 @@ mcast_msg * find_message(queue_entry *ptr, int source, int src_seq) {
 }
 
 void store_sent_message(const char *message) {
-    debugprintf("Storing sent message");
     push_to_queue(&sent_queue_head, &sent_queue_tail, &sent_num_queue,
-                  message, strlen(message), my_id, my_vector, 
-                  mcast_ping_num_members, my_vector[my_vector_num]);
+                  message, strlen(message), my_vector, mcast_ping_num_members, 
+                  my_id, my_vector[my_vector_num]);
     return;
 }
 
-void store_deliv_message(const char *msg_str, int msg_len, int source, 
-                         int *msg_vector, int msg_vector_len, int src_seq) {
+void store_deliv_message(const char *msg_str, int msg_len, int *msg_vector, 
+                         int msg_vector_len, int generator, int gen_seq) {
     push_to_queue(&deliv_queue_head, &deliv_queue_tail, &deliv_num_queue, 
-                  msg_str, msg_len, source, msg_vector, msg_vector_len, 
-                  src_seq);
+                  msg_str, msg_len, msg_vector, msg_vector_len, generator,
+                  gen_seq);
     return;
 }
