@@ -550,3 +550,12 @@ int * check_missing(queue_entry *ptr, int source, int last_delivered,
   return missing_seq;
 }
 
+mcast_msg * find_message(queue_ptr *ptr, int source, int src_seq) {
+  while (ptr) {
+    if (ptr->msg.source == source && ptr->msg.src_seq == src_seq) {
+      return &ptr->msg;
+    }
+    ptr = ptr->next;
+  }
+  return NULL;
+}
