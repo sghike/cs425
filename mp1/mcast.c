@@ -20,6 +20,8 @@ int *alive;
 
 // Causally ordered reliable multicast.
 int buffer_num_queue;
+int sent_num_queue;
+int deliv_num_queue;
 int *my_vector;
 int my_vector_num;
 
@@ -39,6 +41,10 @@ struct _queue_entry_ {
 };
 queue_entry *buffer_queue_tail;
 queue_entry *buffer_queue_head;
+queue_entry *sent_queue_tail;
+queue_entry *sent_queue_head;
+queue_entry *deliv_queue_head;
+queue_entry *deliv_queue_tail;
     
 void my_vector_print();
 int find_src_index(int source);
@@ -143,6 +149,12 @@ void multicast_init(void) {
     buffer_num_queue = 0;
     buffer_queue_tail = NULL;
     buffer_queue_head =NULL;
+    sent_num_queue = 0;
+    sent_queue_head = NULL;
+    sent_queue_tail = NULL;
+    deliv_num_queue = 0;
+    deliv_queue_head = NULL;
+    deliv_queue_tail = NULL;
     
     unicast_init();
     
@@ -206,7 +218,8 @@ void receive(int source, const char *message, int len) {
                                                       msg_vector_len, 
                                                       msg_src_seq, src_index);
       if (deliver_buffer_discard == 0) {
-        deliver(source, message);
+        store_deliv_message(msg_str, msg_len, source, msg_vector, msg_vector_len, msg_src_seq);
+	deliver(source, message);
 //        deliver(source, msg_str);
         my_vector[src_index]++;
         
@@ -263,7 +276,7 @@ void multicast(const char *message) {
       if(alive[i] && (mcast_members[i] != my_id)) usend(mcast_members[i], buf, strlen(buf) + 1);
     }
     pthread_mutex_unlock(&member_lock);
-
+    store_sent_message(message);
     // Deliver to myself.
     deliver(my_id, message); 
     
@@ -558,4 +571,21 @@ mcast_msg * find_message(queue_ptr *ptr, int source, int src_seq) {
     ptr = ptr->next;
   }
   return NULL;
+}
+
+void store_sent_message(const char *message)
+{
+    debugprintf("Storing sent message");
+    push_to_queue(&sent_queue_head, &sent_queue_tail, &sent_num_queue,
+                    message, strlen(message), my_id, my_vector, mcast_ping_num_members, my_seq);
+    return;
+}
+
+void store_deliv_message(const char *msg_str, int msg_len, int source, 
+                   int *msg_vector, int msg_vector_len, int src_seq)
+{
+    push_to_queue(&deliv_queue_head, &deliv_queue_tail, &deliv_num_queue, 
+                        msg_str, msg_len, source, msg_vector,
+                        msg_vector_len, src_seq);
+    return;
 }
