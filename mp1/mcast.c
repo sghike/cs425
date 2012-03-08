@@ -20,8 +20,8 @@ int *alive;
 
 // Causally ordered reliable multicast.
 int buffer_num_queue;
-int my_seq;
 int *my_vector;
+int my_vector_num;
 
 typedef struct {
   char *str;
@@ -42,7 +42,7 @@ queue_entry *buffer_queue_head;
     
 void my_vector_print();
 int find_src_index(int source);
-void parse_msg(const char *message, int *msg_len, int **msg_vector, 
+void parse_msg(const char *message, int source, int *msg_len, int **msg_vector, 
                int *src_seq, int *msg_vector_len);
 char * strip_msg(const char *message, int msg_len);
 void send_neg_ack(const char *message, int msg_len, int source, int src_index,
@@ -133,6 +133,7 @@ void *flush_received_beats(void *duration) {
 }
 
 void multicast_init(void) {
+    int i = 0;
     mcast_ping_num_members = 0;
     mcast_ping_mem_alloc = 16;
     mcast_pings = (mcast_ping *)malloc(sizeof(mcast_ping) * 
@@ -142,10 +143,16 @@ void multicast_init(void) {
     buffer_num_queue = 0;
     buffer_queue_tail = NULL;
     buffer_queue_head =NULL;
-    my_seq = 0;
     
     unicast_init();
     
+    pthread_mutex_lock(&member_lock);
+    for (i = 0; i < mcast_num_members; i++) {
+      if (mcast_members[i] == my_id) 
+        my_vector_num = i;
+    }
+    pthread_mutex_unlock(&member_lock);
+
     // Create a thread to send heart beats to other processes.
     send_duration = 10;
     if (pthread_create(&send_beats_thread, NULL, &send_heart_beats, 
@@ -188,7 +195,8 @@ void receive(int source, const char *message, int len) {
       int msg_src_seq = -1;
       int msg_vector_len = -1;
       int *msg_vector;
-      parse_msg(message, &msg_len, &msg_vector, &msg_src_seq, &msg_vector_len);
+      parse_msg(message, source, &msg_len, &msg_vector, &msg_src_seq, 
+                &msg_vector_len);
       char *msg_str = strip_msg(message, msg_len);
 
       int src_index = find_src_index(source);
@@ -229,11 +237,7 @@ void multicast(const char *message) {
     int t = 100;
 
     // Increment sequence number.
-    my_seq++;
-    sprintf(str, "%d;", my_seq);
-    // Add my_seq to message.
-    strcat(buf, str);
-    t -= strlen(str);
+    my_vector[my_vector_num]++;
 
     pthread_mutex_lock(&member_lock);
     // Append the number of mcast members I have seen until now, included the
@@ -256,9 +260,12 @@ void multicast(const char *message) {
     debugprintf("Msg = %s\n", buf);
     // Multicast to everyone including me.
     for (i = 0; i < mcast_ping_num_members; i++) {
-      if(alive[i]) usend(mcast_members[i], buf, strlen(buf) + 1);
+      if(alive[i] && (mcast_members[i] != my_id)) usend(mcast_members[i], buf, strlen(buf) + 1);
     }
     pthread_mutex_unlock(&member_lock);
+
+    // Deliver to myself.
+    deliver(my_id, message); 
     
     free(str);
     free(buf);
@@ -276,7 +283,7 @@ int find_src_index(int source) {
   return -1;
 }
 
-void parse_msg(const char *message, int *msg_len, int **msg_vector, 
+void parse_msg(const char *message, int source, int *msg_len, int **msg_vector, 
                int *src_seq, int *msg_vector_len) {
   int i, j;
   char *str = (char *)malloc(sizeof(char) * 20);
@@ -288,13 +295,6 @@ void parse_msg(const char *message, int *msg_len, int **msg_vector,
 
   *msg_len = atoi(str);
   for (j = 0, i = i + (*msg_len) + 2; i < strlen(message); i++, j++) {
-    if (message[i] == ';') break;
-    str[j] = message[i];
-  }
-  str[j] = '\0';
-  *src_seq = atoi(str);
-  
-  for (j = 0, i = i + 1; i < strlen(message); i++, j++) {
     if (message[i] == ';') break;
     str[j] = message[i];
   }
@@ -311,6 +311,11 @@ void parse_msg(const char *message, int *msg_len, int **msg_vector,
     } else {
       str[j++] = message[i];
     }
+  }
+
+  for (i = 0; i < *msg_vector_len; i++) {
+    if (mcast_members[i] == source)
+      *src_seq = (*msg_vector)[i];
   }
 
   free(str);
@@ -339,15 +344,7 @@ void neg_ack(int node_index, int msg_vector_val, int source, int src_index,
   int *missing;
   int num_missing;
   
-  if (node_index == src_index) {
-    reqst = (src_seq > (my_vector[node_index] + 1));
-    missing = check_missing(buffer_queue_head, source, my_vector[node_index], 
-                            src_seq - 1, &num_missing);
-  } else {
-    reqst = (msg_vector_val > my_vector[node_index]);
-    missing = check_missing(buffer_queue_head, source, my_vector[node_index],
-                            msg_vector_val, &num_missing);
-  }
+  reqst = (msg_vector_val > my_vector[node_index]);
 
   if (reqst) {
     if (alive[node_index]) { // Ask original generator if alive.
@@ -357,6 +354,8 @@ void neg_ack(int node_index, int msg_vector_val, int source, int src_index,
     } else { // No visible source of required messages.
       return;
     }
+    missing = check_missing(buffer_queue_head, source, my_vector[node_index],
+                            msg_vector_val, &num_missing);
     if (num_missing) {
       char *buf = (char *)malloc(sizeof(char) * 20);
       // Send negative ack for each missing message.
