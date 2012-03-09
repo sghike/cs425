@@ -176,7 +176,7 @@ void multicast_init(void) {
       exit(1);
     }
     // Create a thread to determine failures.
-    flush_duration = 20;
+    flush_duration = 30;
     if (pthread_create(&flush_beats_thread, NULL, &flush_received_beats, 
                        (void *)&flush_duration) != 0) {
       fprintf(stderr, "Error in pthread_create inside multicast_init\n");
