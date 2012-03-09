@@ -301,7 +301,7 @@ void multicast(const char *message) {
       }
     }
 
-    // Multicast to everyone including me.
+    // Multicast to everyone excluding me.
     for (i = 0; i < mcast_ping_num_members; i++) {
       if(alive[i] && (mcast_members[i] != my_id)) 
         usend(mcast_members[i], buf, strlen(buf) + 1);
