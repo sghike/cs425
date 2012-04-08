@@ -1,0 +1,36 @@
+
+# only output INFO messages or higher levels, replace INFO with DEBUG
+# to also log DEBUG messages
+log4j.rootLogger=INFO, A1, A2
+
+    
+# the first "appender": output to the console
+log4j.appender.A1=org.apache.log4j.ConsoleAppender
+
+log4j.appender.A1.layout=org.apache.log4j.PatternLayout
+# Print the date in ISO 8601 format
+log4j.appender.A1.layout.ConversionPattern=%d{MMM dd HH:mm:ss} %-5p %c (%F:%L): %m%n
+
+
+
+# the 2nd "appender": a file
+log4j.appender.A2=org.apache.log4j.FileAppender
+log4j.appender.A2.File=logfileeeee
+
+# whether to append to the log file or create a new file
+log4j.appender.A2.Append=false
+
+log4j.appender.A2.layout=org.apache.log4j.PatternLayout
+# use a different pattern
+log4j.appender.A2.layout.ConversionPattern=%-5p %c (%F__--__%L): %d{HH:mm:ss}: %m%n
+
+
+
+
+
+
+# Print only messages of level INFO or above for the "foo" logger
+log4j.logger.foo=INFO
+
+# Print only messages of level DEBUG or above for the "bar" logger
+log4j.logger.bar=DEBUG
