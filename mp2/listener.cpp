@@ -41,9 +41,10 @@ int main(int argc, char* argv[])
     vector<int> ports; 
     std::string portnum;
     int number_of_ports = 0;
-    
+    int j = 0;
     std::stringstream ss;
     std::string argument;
+    std::string check_int;
     
     // parse out arguments and check if they are valid
     for(i = 1; i < argc; i++)
@@ -111,6 +112,18 @@ int main(int argc, char* argv[])
         // get all the ports specified
         while(portnum.find("--") == -1)
         {
+            // check if the port is actually an integer
+            check_int.assign(argv[sp_pos+i]);
+            for(j = 0; j < check_int.size(); j++)
+            {
+                if((check_int[j] >= '0' && check_int[j] <= '9') == false)
+                {
+                    cout << "specify valid integer for port" << endl;
+                    return -1;
+                }
+                    
+            }
+            
             number_of_ports++;
             ports.push_back(atoi(argv[sp_pos+i]));
             i++;
