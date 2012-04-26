@@ -22,6 +22,11 @@ class NodeHandler : virtual public NodeIf {
     // Your initialization goes here
   }
 
+  void find_successor(finger_entry& _return, const int32_t id) {
+    // Your implementation goes here
+    printf("find_successor\n");
+  }
+
   void closest_preceding_finger(finger_entry& _return, const int32_t id) {
     // Your implementation goes here
     printf("closest_preceding_finger\n");
@@ -30,6 +35,16 @@ class NodeHandler : virtual public NodeIf {
   void get_successor(finger_entry& _return) {
     // Your implementation goes here
     printf("get_successor\n");
+  }
+
+  void get_predecessor(finger_entry& _return) {
+    // Your implementation goes here
+    printf("get_predecessor\n");
+  }
+
+  void notify(const finger_entry& n) {
+    // Your implementation goes here
+    printf("notify\n");
   }
 
 };

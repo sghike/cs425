@@ -7,6 +7,9 @@ struct finger_entry {
 
 
 service Node {
+        finger_entry find_successor(1:i32 id);
 	finger_entry closest_preceding_finger(1:i32 id);
         finger_entry get_successor();
+        finger_entry get_predecessor();
+        void notify(1:finger_entry n);
 }

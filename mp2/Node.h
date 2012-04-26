@@ -15,8 +15,11 @@ namespace mp2 {
 class NodeIf {
  public:
   virtual ~NodeIf() {}
+  virtual void find_successor(finger_entry& _return, const int32_t id) = 0;
   virtual void closest_preceding_finger(finger_entry& _return, const int32_t id) = 0;
   virtual void get_successor(finger_entry& _return) = 0;
+  virtual void get_predecessor(finger_entry& _return) = 0;
+  virtual void notify(const finger_entry& n) = 0;
 };
 
 class NodeIfFactory {
@@ -46,12 +49,129 @@ class NodeIfSingletonFactory : virtual public NodeIfFactory {
 class NodeNull : virtual public NodeIf {
  public:
   virtual ~NodeNull() {}
+  void find_successor(finger_entry& /* _return */, const int32_t /* id */) {
+    return;
+  }
   void closest_preceding_finger(finger_entry& /* _return */, const int32_t /* id */) {
     return;
   }
   void get_successor(finger_entry& /* _return */) {
     return;
   }
+  void get_predecessor(finger_entry& /* _return */) {
+    return;
+  }
+  void notify(const finger_entry& /* n */) {
+    return;
+  }
+};
+
+typedef struct _Node_find_successor_args__isset {
+  _Node_find_successor_args__isset() : id(false) {}
+  bool id;
+} _Node_find_successor_args__isset;
+
+class Node_find_successor_args {
+ public:
+
+  Node_find_successor_args() : id(0) {
+  }
+
+  virtual ~Node_find_successor_args() throw() {}
+
+  int32_t id;
+
+  _Node_find_successor_args__isset __isset;
+
+  void __set_id(const int32_t val) {
+    id = val;
+  }
+
+  bool operator == (const Node_find_successor_args & rhs) const
+  {
+    if (!(id == rhs.id))
+      return false;
+    return true;
+  }
+  bool operator != (const Node_find_successor_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_find_successor_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class Node_find_successor_pargs {
+ public:
+
+
+  virtual ~Node_find_successor_pargs() throw() {}
+
+  const int32_t* id;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _Node_find_successor_result__isset {
+  _Node_find_successor_result__isset() : success(false) {}
+  bool success;
+} _Node_find_successor_result__isset;
+
+class Node_find_successor_result {
+ public:
+
+  Node_find_successor_result() {
+  }
+
+  virtual ~Node_find_successor_result() throw() {}
+
+  finger_entry success;
+
+  _Node_find_successor_result__isset __isset;
+
+  void __set_success(const finger_entry& val) {
+    success = val;
+  }
+
+  bool operator == (const Node_find_successor_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const Node_find_successor_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_find_successor_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _Node_find_successor_presult__isset {
+  _Node_find_successor_presult__isset() : success(false) {}
+  bool success;
+} _Node_find_successor_presult__isset;
+
+class Node_find_successor_presult {
+ public:
+
+
+  virtual ~Node_find_successor_presult() throw() {}
+
+  finger_entry* success;
+
+  _Node_find_successor_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
 };
 
 typedef struct _Node_closest_preceding_finger_args__isset {
@@ -256,6 +376,188 @@ class Node_get_successor_presult {
 
 };
 
+
+class Node_get_predecessor_args {
+ public:
+
+  Node_get_predecessor_args() {
+  }
+
+  virtual ~Node_get_predecessor_args() throw() {}
+
+
+  bool operator == (const Node_get_predecessor_args & /* rhs */) const
+  {
+    return true;
+  }
+  bool operator != (const Node_get_predecessor_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_get_predecessor_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class Node_get_predecessor_pargs {
+ public:
+
+
+  virtual ~Node_get_predecessor_pargs() throw() {}
+
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _Node_get_predecessor_result__isset {
+  _Node_get_predecessor_result__isset() : success(false) {}
+  bool success;
+} _Node_get_predecessor_result__isset;
+
+class Node_get_predecessor_result {
+ public:
+
+  Node_get_predecessor_result() {
+  }
+
+  virtual ~Node_get_predecessor_result() throw() {}
+
+  finger_entry success;
+
+  _Node_get_predecessor_result__isset __isset;
+
+  void __set_success(const finger_entry& val) {
+    success = val;
+  }
+
+  bool operator == (const Node_get_predecessor_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const Node_get_predecessor_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_get_predecessor_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _Node_get_predecessor_presult__isset {
+  _Node_get_predecessor_presult__isset() : success(false) {}
+  bool success;
+} _Node_get_predecessor_presult__isset;
+
+class Node_get_predecessor_presult {
+ public:
+
+
+  virtual ~Node_get_predecessor_presult() throw() {}
+
+  finger_entry* success;
+
+  _Node_get_predecessor_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
+typedef struct _Node_notify_args__isset {
+  _Node_notify_args__isset() : n(false) {}
+  bool n;
+} _Node_notify_args__isset;
+
+class Node_notify_args {
+ public:
+
+  Node_notify_args() {
+  }
+
+  virtual ~Node_notify_args() throw() {}
+
+  finger_entry n;
+
+  _Node_notify_args__isset __isset;
+
+  void __set_n(const finger_entry& val) {
+    n = val;
+  }
+
+  bool operator == (const Node_notify_args & rhs) const
+  {
+    if (!(n == rhs.n))
+      return false;
+    return true;
+  }
+  bool operator != (const Node_notify_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_notify_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class Node_notify_pargs {
+ public:
+
+
+  virtual ~Node_notify_pargs() throw() {}
+
+  const finger_entry* n;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class Node_notify_result {
+ public:
+
+  Node_notify_result() {
+  }
+
+  virtual ~Node_notify_result() throw() {}
+
+
+  bool operator == (const Node_notify_result & /* rhs */) const
+  {
+    return true;
+  }
+  bool operator != (const Node_notify_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_notify_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class Node_notify_presult {
+ public:
+
+
+  virtual ~Node_notify_presult() throw() {}
+
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
 class NodeClient : virtual public NodeIf {
  public:
   NodeClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
@@ -276,12 +578,21 @@ class NodeClient : virtual public NodeIf {
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
+  void find_successor(finger_entry& _return, const int32_t id);
+  void send_find_successor(const int32_t id);
+  void recv_find_successor(finger_entry& _return);
   void closest_preceding_finger(finger_entry& _return, const int32_t id);
   void send_closest_preceding_finger(const int32_t id);
   void recv_closest_preceding_finger(finger_entry& _return);
   void get_successor(finger_entry& _return);
   void send_get_successor();
   void recv_get_successor(finger_entry& _return);
+  void get_predecessor(finger_entry& _return);
+  void send_get_predecessor();
+  void recv_get_predecessor(finger_entry& _return);
+  void notify(const finger_entry& n);
+  void send_notify(const finger_entry& n);
+  void recv_notify();
  protected:
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
@@ -295,13 +606,19 @@ class NodeProcessor : public ::apache::thrift::TProcessor {
   virtual bool process_fn(apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, std::string& fname, int32_t seqid, void* callContext);
  private:
   std::map<std::string, void (NodeProcessor::*)(int32_t, apache::thrift::protocol::TProtocol*, apache::thrift::protocol::TProtocol*, void*)> processMap_;
+  void process_find_successor(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_closest_preceding_finger(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_get_successor(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_get_predecessor(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_notify(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
   NodeProcessor(boost::shared_ptr<NodeIf> iface) :
     iface_(iface) {
+    processMap_["find_successor"] = &NodeProcessor::process_find_successor;
     processMap_["closest_preceding_finger"] = &NodeProcessor::process_closest_preceding_finger;
     processMap_["get_successor"] = &NodeProcessor::process_get_successor;
+    processMap_["get_predecessor"] = &NodeProcessor::process_get_predecessor;
+    processMap_["notify"] = &NodeProcessor::process_notify;
   }
 
   virtual bool process(boost::shared_ptr<apache::thrift::protocol::TProtocol> piprot, boost::shared_ptr<apache::thrift::protocol::TProtocol> poprot, void* callContext);
@@ -331,6 +648,18 @@ class NodeMultiface : virtual public NodeIf {
     ifaces_.push_back(iface);
   }
  public:
+  void find_successor(finger_entry& _return, const int32_t id) {
+    size_t sz = ifaces_.size();
+    for (size_t i = 0; i < sz; ++i) {
+      if (i == sz - 1) {
+        ifaces_[i]->find_successor(_return, id);
+        return;
+      } else {
+        ifaces_[i]->find_successor(_return, id);
+      }
+    }
+  }
+
   void closest_preceding_finger(finger_entry& _return, const int32_t id) {
     size_t sz = ifaces_.size();
     for (size_t i = 0; i < sz; ++i) {
@@ -352,6 +681,25 @@ class NodeMultiface : virtual public NodeIf {
       } else {
         ifaces_[i]->get_successor(_return);
       }
+    }
+  }
+
+  void get_predecessor(finger_entry& _return) {
+    size_t sz = ifaces_.size();
+    for (size_t i = 0; i < sz; ++i) {
+      if (i == sz - 1) {
+        ifaces_[i]->get_predecessor(_return);
+        return;
+      } else {
+        ifaces_[i]->get_predecessor(_return);
+      }
+    }
+  }
+
+  void notify(const finger_entry& n) {
+    size_t sz = ifaces_.size();
+    for (size_t i = 0; i < sz; ++i) {
+      ifaces_[i]->notify(n);
     }
   }
 
