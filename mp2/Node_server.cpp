@@ -18,7 +18,7 @@ using namespace  ::mp2;
 using namespace std;
 
 class Node {
-  private:
+  public:
     int id;
     int port;
     finger_entry successor;
@@ -29,17 +29,25 @@ class Node {
     int stabilizeInterval;
     int fixInterval;
     int seed;
-    bool logConf;
-    multimap<
 
-  public:
-    Node(int id, int port) {
+    Node(int m, int id, int port) {
+      int i;
+      figer_entry null_finger = {-1, -1};
+      this->m = m;
       this->id = id;
       this->port = port;
       predecessor = {-1, -1};
       successor = {-1, -1};
-      introducerPort = -1;
-      srand(10);
+      for (i = 0; i < m; i++)
+        finger_table.push_back(null_finger);
+      if (id == 0)
+        introducerPort = port;
+      else 
+        introducerPort = -1;
+      stabilizeInterval = 10;
+      fixInterval = 10;
+      seed = 10;
+      srand(seed);
     }
 
     void setIntroducerPort(int introducerPort) {
@@ -118,6 +126,7 @@ class Node {
       client.find_successor(successor, id);
 
       transport->close();     
+      cout << "node = <" << id << ">: initial sucessor= <" << successor.id << ">" << endl;
     }
 
     void stabilize() {
@@ -144,7 +153,11 @@ class Node {
     void fix_fingers() {
       int i = (rand() % (m-1)) + 1;
       int start = (id + pow(2, i)) % pow(2, m);
-      finger_table[i] = me->find_successor_local(start);
+      finger_entry new_finger = me->find_successor_local(start);
+      if (finger_table[i] != new_finger) {
+        finger_table[i] = new_finger;
+        cout << "node= <" << id << ">: updated finger entry: i= <" << i+1 << ">, pointer= <" << new.finger.id << ">" << endl;
+      }
     }
 };
 
@@ -202,15 +215,118 @@ class NodeHandler : virtual public NodeIf {
     // Your implementation goes here
     printf("notify\n");
     if ((me->predecessor.id = -1) || 
-        ((predecessor.id < id && (n.id > predecessor.id && n.id < id)) ||
-         (id < predecessor.id && (n.id > predecessor.id || n.id < id))))
-      predecessor = n;
+        ((me->predecessor.id < id && (n.id > me->predecessor.id && n.id < id)) ||
+         (id < me->predecessor.id && (n.id > me->predecessor.id || n.id < id)))) {
+      if (me->predecessor != n) {
+        me->predecessor = n;
+        cout << "node= <" << me->id << ">: updated predecessor= <" << n.id << ">" << endl;
+      }
+    }
   }
 
 };
 
 int main(int argc, char **argv) {
-  int port = 9090;
+  INIT_LOCAL_LOGGER();
+  int opt;
+  int long_index;
+
+  int m = -1;
+  int id = -1;
+  int port = -1;
+  int introducerPort = -1;
+  int stabilizeInterval = -1;
+  int fixInterval = -1;
+  int seed = -1;
+  const char *logconffile = NULL;
+  
+  struct option long_options[] = {
+    /* mandatory args */
+    {"m", required_argument, 0, 1000},
+    /* id of this node: 0 for introducer */
+    {"id", required_argument, 0, 1001},
+    /* port THIS node will listen on, at least for the
+     * Chord-related API/service
+     */
+    {"port", required_argument, 0, 1002},
+    /* optional args */
+    /* if not introducer (id != 0), then this is required: port
+     * the introducer is listening on.
+     */
+    {"introducerPort", required_argument, 0, 1003},
+    /* path to the log configuration file */
+    {"logConf", required_argument, 0, 1004},
+    /* intervals (seconds) for runs of the stabilization and
+     * fixfinger algorithms */
+    {"stabilizeInterval", required_argument, 0, 1005},
+    {"fixInterval", required_argument, 0, 1006},
+    {"seed", required_argument, 0, 1007},
+    {0, 0, 0, 0},
+  };
+  
+  while ((opt = getopt_long(argc, argv, "", long_options, &long_index)) != -1) {
+      switch (opt) {
+      case 0:
+          if (long_options[long_index].flag != 0) {
+              break;
+          }
+          printf("option %s ", long_options[long_index].name);
+          if (optarg) {
+              printf("with arg %s\n", optarg);
+          }
+          printf("\n");
+          break;
+      case 1000:
+          m = strtol(optarg, NULL, 10);
+          assert((m >= 5) && (m <= 10));
+          break;
+      case 1001:
+          id = strtol(optarg, NULL, 10);
+          assert(id >= 0);
+          break;
+      case 1002:
+          port = strtol(optarg, NULL, 10);
+          assert(port > 0);
+          break;
+      case 1003:
+          introducerPort = strtol(optarg, NULL, 10);
+          assert(introducerPort > 0);
+          break;
+      case 1004:
+          logconffile = optarg;
+          break;
+      case 1005:
+          stabilizeInterval = strtol(optarg, NULL, 10);
+          assert(stabilizeInterval > 0);
+          break;
+      case 1006:
+          fixInterval = strtol(optarg, NULL, 10);
+          assert(fixInterval > 0);
+          break;
+      case 1007:
+          seed = strtol(optarg, NULL, 10);
+          break;
+      default:
+          exit(1);
+      }
+  }
+
+  // configureLogging(logconffile);
+  
+  me = new Node(m, id, port);
+  if (introducerPort != -1) {
+    me->setIntroducerPort(introducerPort);
+  }
+  if (stabilizeInterval != -1) {
+    me->setStabilizeInterval(stabilizeInterval);
+  }
+  if (fixInterval != -1) {
+    me->setFixInterval(fixInterval);
+  }
+  if (seed != -1) {
+    me->setSeed(seed);
+  }
+
   shared_ptr<NodeHandler> handler(new NodeHandler());
   shared_ptr<TProcessor> processor(new NodeProcessor(handler));
   shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
