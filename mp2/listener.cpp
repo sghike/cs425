@@ -15,6 +15,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include "listener.hpp"
+#include <netdb.h>
+#include <arpa/inet.h>
 
 using namespace std;
 
@@ -51,7 +53,6 @@ int main(int argc, char* argv[])
     // parse out arguments and check if they are valid
     for(i = 1; i < argc; i++)
     {
-     
         argument.assign(argv[i]);
         
         if(argument.compare("--m") == 0)
@@ -84,6 +85,11 @@ int main(int argc, char* argv[])
             lc++;
             lc_pos = i;
         }
+	else if(argument.find("-") != -1)
+        {
+             cout << "Wrong usage of program\n";
+             return -1;
+        }
         argument.clear();
     }
     
@@ -94,7 +100,26 @@ int main(int argc, char* argv[])
     }   
     
     if(m == 1)
+    {
+        // check if the number is actually an integer        
+        check_int.assign(argv[m_pos+1]);
+        for(j = 0; j < check_int.size(); j++)
+        {
+            if((check_int[j] >= '0' && check_int[j] <= '9') == false)
+            {
+                cout << "specify valid integer for number of bits" << endl;
+                return -1;
+            }
+        }
+
+        if(atoi(argv[m_pos+1]) > 10 || atoi(argv[m_pos+1]) < 5)
+        { 
+            cout <<  "specify valid integer for number of bits (5 <= m <= 10)" << endl;
+            return -1;
+        }
         cout << "the number of bits of the keys/nodeIDs : " << atoi(argv[m_pos+1]) << endl;
+        
+    }
     if(si == 1)
         cout << "stabilize interval to " << atoi(argv[si_pos+1]) << endl;
     if(atn == 1)
@@ -130,6 +155,7 @@ int main(int argc, char* argv[])
             ports.push_back(atoi(argv[sp_pos+i]));
             i++;
             portnum.clear();
+            check_int.clear();
             if(sp_pos+i < argc)
                 portnum.assign(argv[sp_pos+i]);
             else
@@ -260,8 +286,8 @@ int add_node(int ID, vector<int> ports)
         introducer_port = port_num;
     
     // create a process listening on port rand_port
-    if(make_syscall() == 1)
-        cout << "syscall failed";
+   // if(make_syscall() == 1)
+   //     cout << "syscall failed";
     
     // contact the introducer
     
@@ -370,9 +396,45 @@ int get_table(std::string input)
 
 int scan_port(int port_num)
 {
+    struct addrinfo hints, *res;
+    int sockfd, ver;
+    std::string s;
+    std::stringstream ss;
+    int yes = 1;
+
+    ss << port_num;
+    s = ss.str();    
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET; 
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    getaddrinfo(NULL, s.c_str(), &hints, &res);
+
+    // make a socket
+    sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    cout << "Checking port : " << port_num << endl;
+    // see if port is usuable by trying to bind to socket
+    ver = bind(sockfd, res->ai_addr, res->ai_addrlen);
+   
+    if(ver == -1)
+    {
+        cout << "port " << port_num << " is not available" << endl;
+        return -1;
+    }
+    else
+        cout << "port " << port_num << " is available" << endl;
+
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+    {
+        perror("setsockopt");
+        exit(1);
+    }
+     
     cout << "Using port : " << port_num << "\n";
-    return 0;
     
+    return 0;
 }
 
 int make_syscall()
@@ -381,7 +443,7 @@ int make_syscall()
     char buff[512];
     pid_t pID;
     
-    cout << "executing command"<< endl;
+    cout << "creating a new node"<< endl;
     
  //   pID = fork();
     
