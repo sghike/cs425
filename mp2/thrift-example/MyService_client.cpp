@@ -6,7 +6,6 @@
 
 
 #include <vector>
-#include <vector>
 #include <string>
 
 using namespace apache::thrift;

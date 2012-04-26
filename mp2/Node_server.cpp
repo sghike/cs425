@@ -2,10 +2,24 @@
 // You should copy it to another filename to avoid overwriting it.
 
 #include "Node.h"
+#include <transport/TSocket.h>
+#include <transport/TBufferTransports.h>
 #include <protocol/TBinaryProtocol.h>
 #include <server/TSimpleServer.h>
 #include <transport/TServerSocket.h>
 #include <transport/TBufferTransports.h>
+#include <iostream>
+#include <assert.h>
+#include <stdint.h>
+#include <iomanip>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <math.h>
+#include <getopt.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
@@ -16,6 +30,18 @@ using boost::shared_ptr;
 
 using namespace  ::mp2;
 using namespace std;
+
+int ipow(int base, int exp) {
+    int result = 1;
+    while (exp)
+    {
+        if (exp & 1)
+            result *= base;
+        exp >>= 1;
+        base *= base;
+    }
+    return result;
+}
 
 class Node {
   public:
@@ -32,12 +58,16 @@ class Node {
 
     Node(int m, int id, int port) {
       int i;
-      figer_entry null_finger = {-1, -1};
+      finger_entry null_finger;
+      null_finger.id = -1;
+      null_finger.port = -1;
       this->m = m;
       this->id = id;
       this->port = port;
-      predecessor = {-1, -1};
-      successor = {-1, -1};
+      predecessor.id = -1;
+      predecessor.port = -1;
+      successor.id = -1;
+      successor.port = -1;
       for (i = 0; i < m; i++)
         finger_table.push_back(null_finger);
       if (id == 0)
@@ -73,7 +103,7 @@ class Node {
       boost::shared_ptr<TSocket> socket(new TSocket("localhost", n.port));
       boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
       boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
-      MyServiceClient client(protocol);
+      NodeClient client(protocol);
       transport->open();
 
       finger_entry n_successor;
@@ -84,42 +114,45 @@ class Node {
     }
 
     finger_entry find_predecessor(int id) {
-      finger_entry n = {me->id, me->port};
-      int successor = me->successor.id;
+      finger_entry n;
+      n.id = id;
+      n.port = port;
+      int succ = successor.id;
 
-      while (!((successor > n && (id > n && id <= successor)) || 
-             (n > successor && (id > n || id <= successor)))) {
+      while (!((succ > n.id && (id > n.id && id <= succ)) || 
+             (n.id > succ && (id > n.id || id <= succ)))) {
         boost::shared_ptr<TSocket> socket1(new TSocket("localhost", n.port));
-        boost::shared_ptr<TTransport> 
-          transport1(new TBufferedTransport(socket));
-        boost::shared_ptr<TProtocol> protocol1(new TBinaryProtocol(transport));
-        MyServiceClient client1(protocol1);
+        boost::shared_ptr<TTransport> transport1(new TBufferedTransport(socket1));
+        boost::shared_ptr<TProtocol> protocol1(new TBinaryProtocol(transport1));
+        NodeClient client1(protocol1);
         transport1->open();
         client1.closest_preceding_finger(n, id);
         transport1->close();
 
         boost::shared_ptr<TSocket> socket2(new TSocket("localhost", n.port));
         boost::shared_ptr<TTransport> 
-          transport2(new TBufferedTransport(socket));
-        boost::shared_ptr<TProtocol> protocol2(new TBinaryProtocol(transport));
-        MyServiceClient client2(protocol2);
+          transport2(new TBufferedTransport(socket2));
+        boost::shared_ptr<TProtocol> protocol2(new TBinaryProtocol(transport2));
+        NodeClient client2(protocol2);
         transport2->open();
         finger_entry n_successor;
         client2.get_successor(n_successor);
-        successor = n_successor.id;
+        succ = n_successor.id;
         transport2->close();
       }
+      return n;
     }
 
     void join(int introducer) {
-      predecessor = {-1, -1};
+      predecessor.id = -1;
+      predecessor.port =-1;
 
       assert(introducerPort != -1);
       boost::shared_ptr<TSocket> socket(new TSocket("localhost", 
             introducerPort));
       boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
       boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
-      MyServiceClient client(protocol);
+      NodeClient client(protocol);
       transport->open();
 
       finger_entry successor;
@@ -134,29 +167,32 @@ class Node {
             successor.port));
       boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
       boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
-      MyServiceClient client(protocol);
+      NodeClient client(protocol);
       transport->open();
       finger_entry x;
       client.get_predecessor(x);
       transport->close();
 
-      if ((id < successor.id && (x > id && x < successor)) ||
-          (successor < id && (x > id || x < successor))) {
+      if ((id < successor.id && (x.id > id && x.id < successor.id)) ||
+          (successor.id < id && (x.id > id || x.id < successor.id))) {
         successor = x;
       }
 
       transport->open();
-      client.notify(id);
+      finger_entry my_entry;
+      my_entry.id = id;
+      my_entry.port = port;
+      client.notify(my_entry);
       transport->close();
     }
 
     void fix_fingers() {
       int i = (rand() % (m-1)) + 1;
-      int start = (id + pow(2, i)) % pow(2, m);
-      finger_entry new_finger = me->find_successor_local(start);
+      int start = (id + ipow(2, i)) % ipow(2, m);
+      finger_entry new_finger = find_successor_local(start);
       if (finger_table[i] != new_finger) {
         finger_table[i] = new_finger;
-        cout << "node= <" << id << ">: updated finger entry: i= <" << i+1 << ">, pointer= <" << new.finger.id << ">" << endl;
+        cout << "node= <" << id << ">: updated finger entry: i= <" << i+1 << ">, pointer= <" << new_finger.id << ">" << endl;
       }
     }
 };
@@ -177,7 +213,7 @@ class NodeHandler : virtual public NodeIf {
     boost::shared_ptr<TSocket> socket(new TSocket("localhost", n.port));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
-    MyServiceClient client(protocol);
+    NodeClient client(protocol);
     transport->open();
 
     client.get_successor(_return);
@@ -190,13 +226,14 @@ class NodeHandler : virtual public NodeIf {
     // Your implementation goes here
     printf("closest_preceding_finger\n");
     int i;
-    for (i = m - 1; i >= 0; i--) {
+    for (i = me->m - 1; i >= 0; i--) {
       int finger_id = me->finger_table[i].id;
-      if ((n < id && (finger_id > n && finger_id < id)) ||
-          (n > id && (finger_id < id || finger_id > n)))
+      if ((me->id < id && (finger_id > me->id && finger_id < id)) ||
+          (me->id > id && (finger_id < id || finger_id > me->id)))
         _return = me->finger_table[i];
     }
-    _return = {me->id, me->port};
+    _return.id  = me->id;
+    _return.port = me->port;
   }
   
   void get_successor(finger_entry& _return) {
@@ -215,8 +252,8 @@ class NodeHandler : virtual public NodeIf {
     // Your implementation goes here
     printf("notify\n");
     if ((me->predecessor.id = -1) || 
-        ((me->predecessor.id < id && (n.id > me->predecessor.id && n.id < id)) ||
-         (id < me->predecessor.id && (n.id > me->predecessor.id || n.id < id)))) {
+        ((me->predecessor.id < me->id && (n.id > me->predecessor.id && n.id < me->id)) ||
+         (me->id < me->predecessor.id && (n.id > me->predecessor.id || n.id < me->id)))) {
       if (me->predecessor != n) {
         me->predecessor = n;
         cout << "node= <" << me->id << ">: updated predecessor= <" << n.id << ">" << endl;
@@ -227,7 +264,7 @@ class NodeHandler : virtual public NodeIf {
 };
 
 int main(int argc, char **argv) {
-  INIT_LOCAL_LOGGER();
+//  INIT_LOCAL_LOGGER();
   int opt;
   int long_index;
 
