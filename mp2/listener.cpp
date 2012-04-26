@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <assert.h>
 #include <stdint.h>
 // #include <iomanip>
@@ -45,6 +46,7 @@ int main(int argc, char* argv[])
     std::stringstream ss;
     std::string argument;
     std::string check_int;
+    
     
     // parse out arguments and check if they are valid
     for(i = 1; i < argc; i++)
@@ -257,7 +259,9 @@ int add_node(int ID, vector<int> ports)
     if (ID == 0)
         introducer_port = port_num;
     
-    // fork a process listening on port rand_port
+    // create a process listening on port rand_port
+    if(make_syscall() == 1)
+        cout << "syscall failed";
     
     // contact the introducer
     
@@ -370,4 +374,43 @@ int scan_port(int port_num)
     return 0;
     
 }
+
+int make_syscall()
+{
+    FILE *in;
+    char buff[512];
+    pid_t pID;
+    
+    cout << "executing command"<< endl;
+    
+ //   pID = fork();
+    
+   // if(pID == 0)
+    //{
+        in = popen("./my_server", "r");
+    //}
+    
+    //else if (pID < 0)
+    //{
+     //   cout << "fail to fork" << endl;
+   // }
+    
+   /*
+    
+    if(!(in = popen("./my_server", "w")))
+    {
+        return 1;
+    }*/   
+    /*
+    while(fgets(buff, sizeof(buff), in) != NULL)
+    {
+        cout << buff;
+    }
+    
+    pclose(in);  */
+    
+    return 0;    
+}
+
+
 

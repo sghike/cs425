@@ -10,6 +10,7 @@ int del_file(std::string input);
 int get_file(std::string input);
 int get_table(std::string input);
 int scan_port(int port_num);
+int make_syscall();
 
 #endif
 
