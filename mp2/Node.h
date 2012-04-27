@@ -20,6 +20,8 @@ class NodeIf {
   virtual void get_successor(finger_entry& _return) = 0;
   virtual void get_predecessor(finger_entry& _return) = 0;
   virtual void notify(const finger_entry& n) = 0;
+  virtual void add_file(const int32_t key_id, const std::string& s) = 0;
+  virtual int32_t store_file(const int32_t key_id, const std::string& s) = 0;
 };
 
 class NodeIfFactory {
@@ -63,6 +65,13 @@ class NodeNull : virtual public NodeIf {
   }
   void notify(const finger_entry& /* n */) {
     return;
+  }
+  void add_file(const int32_t /* key_id */, const std::string& /* s */) {
+    return;
+  }
+  int32_t store_file(const int32_t /* key_id */, const std::string& /* s */) {
+    int32_t _return = 0;
+    return _return;
   }
 };
 
@@ -558,6 +567,220 @@ class Node_notify_presult {
 
 };
 
+typedef struct _Node_add_file_args__isset {
+  _Node_add_file_args__isset() : key_id(false), s(false) {}
+  bool key_id;
+  bool s;
+} _Node_add_file_args__isset;
+
+class Node_add_file_args {
+ public:
+
+  Node_add_file_args() : key_id(0), s("") {
+  }
+
+  virtual ~Node_add_file_args() throw() {}
+
+  int32_t key_id;
+  std::string s;
+
+  _Node_add_file_args__isset __isset;
+
+  void __set_key_id(const int32_t val) {
+    key_id = val;
+  }
+
+  void __set_s(const std::string& val) {
+    s = val;
+  }
+
+  bool operator == (const Node_add_file_args & rhs) const
+  {
+    if (!(key_id == rhs.key_id))
+      return false;
+    if (!(s == rhs.s))
+      return false;
+    return true;
+  }
+  bool operator != (const Node_add_file_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_add_file_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class Node_add_file_pargs {
+ public:
+
+
+  virtual ~Node_add_file_pargs() throw() {}
+
+  const int32_t* key_id;
+  const std::string* s;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class Node_add_file_result {
+ public:
+
+  Node_add_file_result() {
+  }
+
+  virtual ~Node_add_file_result() throw() {}
+
+
+  bool operator == (const Node_add_file_result & /* rhs */) const
+  {
+    return true;
+  }
+  bool operator != (const Node_add_file_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_add_file_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class Node_add_file_presult {
+ public:
+
+
+  virtual ~Node_add_file_presult() throw() {}
+
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
+typedef struct _Node_store_file_args__isset {
+  _Node_store_file_args__isset() : key_id(false), s(false) {}
+  bool key_id;
+  bool s;
+} _Node_store_file_args__isset;
+
+class Node_store_file_args {
+ public:
+
+  Node_store_file_args() : key_id(0), s("") {
+  }
+
+  virtual ~Node_store_file_args() throw() {}
+
+  int32_t key_id;
+  std::string s;
+
+  _Node_store_file_args__isset __isset;
+
+  void __set_key_id(const int32_t val) {
+    key_id = val;
+  }
+
+  void __set_s(const std::string& val) {
+    s = val;
+  }
+
+  bool operator == (const Node_store_file_args & rhs) const
+  {
+    if (!(key_id == rhs.key_id))
+      return false;
+    if (!(s == rhs.s))
+      return false;
+    return true;
+  }
+  bool operator != (const Node_store_file_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_store_file_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class Node_store_file_pargs {
+ public:
+
+
+  virtual ~Node_store_file_pargs() throw() {}
+
+  const int32_t* key_id;
+  const std::string* s;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _Node_store_file_result__isset {
+  _Node_store_file_result__isset() : success(false) {}
+  bool success;
+} _Node_store_file_result__isset;
+
+class Node_store_file_result {
+ public:
+
+  Node_store_file_result() : success(0) {
+  }
+
+  virtual ~Node_store_file_result() throw() {}
+
+  int32_t success;
+
+  _Node_store_file_result__isset __isset;
+
+  void __set_success(const int32_t val) {
+    success = val;
+  }
+
+  bool operator == (const Node_store_file_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const Node_store_file_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_store_file_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _Node_store_file_presult__isset {
+  _Node_store_file_presult__isset() : success(false) {}
+  bool success;
+} _Node_store_file_presult__isset;
+
+class Node_store_file_presult {
+ public:
+
+
+  virtual ~Node_store_file_presult() throw() {}
+
+  int32_t* success;
+
+  _Node_store_file_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
 class NodeClient : virtual public NodeIf {
  public:
   NodeClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
@@ -593,6 +816,12 @@ class NodeClient : virtual public NodeIf {
   void notify(const finger_entry& n);
   void send_notify(const finger_entry& n);
   void recv_notify();
+  void add_file(const int32_t key_id, const std::string& s);
+  void send_add_file(const int32_t key_id, const std::string& s);
+  void recv_add_file();
+  int32_t store_file(const int32_t key_id, const std::string& s);
+  void send_store_file(const int32_t key_id, const std::string& s);
+  int32_t recv_store_file();
  protected:
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
@@ -611,6 +840,8 @@ class NodeProcessor : public ::apache::thrift::TProcessor {
   void process_get_successor(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_get_predecessor(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_notify(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_add_file(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_store_file(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
   NodeProcessor(boost::shared_ptr<NodeIf> iface) :
     iface_(iface) {
@@ -619,6 +850,8 @@ class NodeProcessor : public ::apache::thrift::TProcessor {
     processMap_["get_successor"] = &NodeProcessor::process_get_successor;
     processMap_["get_predecessor"] = &NodeProcessor::process_get_predecessor;
     processMap_["notify"] = &NodeProcessor::process_notify;
+    processMap_["add_file"] = &NodeProcessor::process_add_file;
+    processMap_["store_file"] = &NodeProcessor::process_store_file;
   }
 
   virtual bool process(boost::shared_ptr<apache::thrift::protocol::TProtocol> piprot, boost::shared_ptr<apache::thrift::protocol::TProtocol> poprot, void* callContext);
@@ -700,6 +933,24 @@ class NodeMultiface : virtual public NodeIf {
     size_t sz = ifaces_.size();
     for (size_t i = 0; i < sz; ++i) {
       ifaces_[i]->notify(n);
+    }
+  }
+
+  void add_file(const int32_t key_id, const std::string& s) {
+    size_t sz = ifaces_.size();
+    for (size_t i = 0; i < sz; ++i) {
+      ifaces_[i]->add_file(key_id, s);
+    }
+  }
+
+  int32_t store_file(const int32_t key_id, const std::string& s) {
+    size_t sz = ifaces_.size();
+    for (size_t i = 0; i < sz; ++i) {
+      if (i == sz - 1) {
+        return ifaces_[i]->store_file(key_id, s);
+      } else {
+        ifaces_[i]->store_file(key_id, s);
+      }
     }
   }
 

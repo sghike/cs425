@@ -55,6 +55,7 @@ class Node {
     int stabilizeInterval;
     int fixInterval;
     int seed;
+    map<int, string> files;
 
     Node(int m, int id, int port) {
       int i;
@@ -286,6 +287,21 @@ class NodeHandler : virtual public NodeIf {
         cout << "node= <" << me->id << ">: updated predecessor= <" << n.id << ">" << endl;
       }
     }
+  }
+  
+  void add_file(const int32_t key_id, const std::string& s) {
+    // Your implementation goes here
+    printf("add_file\n");
+    //call me->find_sucessor_local(key_id);
+    //call store_file on destination
+  }
+
+  /* Return success or failure. */
+  int32_t store_file(const int32_t key_id, const std::string& s) {
+    // Your implementation goes here
+    printf("store_file\n");
+    // store (hey_id, s) in me->files;
+    // return success or failure
   }
 
 };
