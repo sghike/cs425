@@ -3,14 +3,17 @@
 
 #include <vector>
 
-void add_node_func(std::string input, std::vector<int> ports);
-int add_node(int ID, std::vector<int> ports);
+void add_node_func(std::string input, std::vector<int> ports, std::string m_val, 
+                   std::string si_val, std::string fi_val, int lc);
+int add_node(int ID, std::vector<int> ports, std::string m_val, std::string si_val,
+             std::string fi_val, int lc);
 int add_file(std::string input);
 int del_file(std::string input);
 int get_file(std::string input);
 int get_table(std::string input);
 int scan_port(int port_num);
-int make_syscall();
+int make_syscall(std::string m_val, int ID, int port_num, std::string si_val, 
+                 std::string fi_val, int lc, int seed);
 
 #endif
 

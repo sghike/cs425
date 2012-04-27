@@ -48,7 +48,10 @@ int main(int argc, char* argv[])
     std::stringstream ss;
     std::string argument;
     std::string check_int;
-    
+    std::string m_val;
+    std::string si_val;
+    std::string fi_val;
+    std::string atn_val;  
     
     // parse out arguments and check if they are valid
     for(i = 1; i < argc; i++)
@@ -70,7 +73,7 @@ int main(int argc, char* argv[])
             atn++;
             atn_pos = i;
         }
-        else if(argument.compare("--stablizeInterval")==0)
+        else if(argument.compare("--stabilizeInterval")==0)
         {
             si++;
             si_pos = i;
@@ -117,13 +120,43 @@ int main(int argc, char* argv[])
             cout <<  "specify valid integer for number of bits (5 <= m <= 10)" << endl;
             return -1;
         }
+        m_val.assign(argv[m_pos+1]);
+        check_int.clear();
         cout << "the number of bits of the keys/nodeIDs : " << atoi(argv[m_pos+1]) << endl;
         
     }
     if(si == 1)
+    {
         cout << "stabilize interval to " << atoi(argv[si_pos+1]) << endl;
+        check_int.assign(argv[si_pos+1]);
+        for(j = 0; j < check_int.size(); j++)
+        {
+            if((check_int[j] >= '0' && check_int[j] <= '9') == false)
+            {
+                cout << "specify valid integer for number of bits" << endl;
+                return -1;
+            }
+        }
+        si_val.assign(argv[si_pos+1]);
+        check_int.clear();
+    }
+
     if(atn == 1)
+    {
         cout << "attaching to node " << atoi(argv[atn_pos+1]) << endl;    
+        check_int.assign(argv[atn_pos+1]);
+        for(j = 0; j < check_int.size(); j++)
+        {
+            if((check_int[j] >= '0' && check_int[j] <= '9') == false)
+            {
+                cout << "specify valid integer for number of bits" << endl;
+                return -1;
+            }
+        }
+        atn_val.assign(argv[atn_pos+1]);
+        check_int.clear();
+    }
+
     if(sp == 1)
     {
         i = 1;
@@ -176,13 +209,32 @@ int main(int argc, char* argv[])
         cout << endl;
     }
     if(fi == 1)
-        cout << "fix interval to : " << atoi(argv[sp_pos+1]) << endl;
+    {
+        cout << "fix interval to : " << atoi(argv[fi_pos+1]) << endl;
+        check_int.assign(argv[fi_pos+1]);
+        for(j = 0; j < check_int.size(); j++)
+        {
+            if((check_int[j] >= '0' && check_int[j] <= '9') == false)
+            {
+                cout << "specify valid integer for number of bits" << endl;
+                return -1;
+            }
+        }
+        fi_val.assign(argv[fi_pos+1]);
+        check_int.clear();
+    }
+
     if(lc == 1)
         cout << "logging is enabled" << endl;    
     
     // take inputs from the terminal
     while(1)
     {
+        
+        // start node 0 if atn != 1
+        if(introducer_port == 0)
+            add_node_func("ADD_NODE 0", ports, m_val, si_val, fi_val, lc);
+        
         cout << "INPUT : ";
         getline(cin, input);
         
@@ -208,7 +260,13 @@ int main(int argc, char* argv[])
         switch(cmp)
         {
             case 0:
-                add_node_func(input, ports);
+                if(atn == 1)
+                {
+                     cout << "You cannot use this function because" << 
+                       " you are not attached to the introducer" << endl; 
+                }
+                else 
+                    add_node_func(input, ports, m_val, si_val, fi_val, lc);
                 break;
             case 1:
                 add_file(input);
@@ -235,7 +293,8 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-void add_node_func(std::string input, vector<int> ports)
+void add_node_func(std::string input, vector<int> ports, std::string m_val,
+                   std::string si_val, std::string fi_val, int lc)
 {
     std::string buf;
     std::stringstream ss;
@@ -252,18 +311,20 @@ void add_node_func(std::string input, vector<int> ports)
         id_num = new char [it->size()+1];
         strcpy(id_num, it->c_str());
         cout << "adding node : " << atoi(id_num) << "\n";
-        add_node(atoi(id_num), ports);
+        add_node(atoi(id_num), ports, m_val, si_val, fi_val, lc);
     }
     
     return;
 }
 
 // 
-int add_node(int ID, vector<int> ports)
+int add_node(int ID, vector<int> ports, std::string  m_val, std::string si_val,
+             std::string fi_val, int lc)
 {
     int port_num;
     int s;
     int i = 1;
+    int seed = 0;
     
     // pick a port number 49152 and 65535
     // check if the port is available
@@ -283,11 +344,13 @@ int add_node(int ID, vector<int> ports)
     
     // check if it is the introducer port
     if (ID == 0)
+    {
         introducer_port = port_num;
+    }
     
     // create a process listening on port rand_port
-   // if(make_syscall() == 1)
-   //     cout << "syscall failed";
+    if(make_syscall(m_val, ID, port_num, si_val, fi_val, lc, seed) == 1)
+        cout << "syscall failed";
     
     // contact the introducer
     
@@ -321,6 +384,13 @@ int add_file(std::string input)
         
     return 0;
 }
+
+/*int attach_to_node(std::string atn_val)
+{
+    int port;
+
+    atoi
+}*/
 
 // pass to introducer
 int del_file(std::string input)
@@ -437,41 +507,101 @@ int scan_port(int port_num)
     return 0;
 }
 
-int make_syscall()
+int make_syscall(std::string m_val, int ID, int port_num, std::string si_val,
+                 std::string fi_val, int lc, int seed)
 {
     FILE *in;
     char buff[512];
-    pid_t pID;
-    
+   // pid_t pID;
+    std::string command = "./node";
+ 
     cout << "creating a new node"<< endl;
+   
+    // number of bits of the keys/node IDs
+    if(m_val.empty() == false)
+    {
+        command.append(" --m ");
+        command.append(m_val);
+    }
     
- //   pID = fork();
+    // the node ID 
+    command.append(" --id ");
+    sprintf(buff, "%d", ID);    
+    command.append(buff);
+
+    // port number
+    command.append(" --port ");
+    sprintf(buff, "%d", port_num);
+    command.append(buff);
+
+    // introducer port if id != 0
+    if(ID != 0)
+    {
+        command.append(" --introducerPort ");
+        sprintf(buff, "%d", introducer_port);
+        command.append(buff);
+    }
+
+    // stabilizeInterval
+    if(si_val.empty() == false)
+    {
+        command.append(" --stabilizeInterval ");
+        command.append(si_val);
+    }
     
-   // if(pID == 0)
-    //{
+    // fixInterval
+    if(fi_val.empty() == false)
+    {
+        command.append(" --fixInterval ");
+        command.append(fi_val);
+    }
+ 
+    // to seed the randomm number generator
+    if(seed != 0)
+    {
+        command.append(" --seed ");
+        sprintf(buff, "%d", seed);
+        command.append(buff);   
+    }
+
+    // logConf
+    if(lc == 1)
+    {
+        command.append(" --logConf");
+    }
+
+    cout << command << endl;
+ 
+//    in = popen(command, "r");
+    return 0;
+
+
+
+ /*   pID = fork();
+    
+    if(pID == 0)
+    {
         in = popen("./my_server", "r");
-    //}
+    }
     
-    //else if (pID < 0)
-    //{
-     //   cout << "fail to fork" << endl;
-   // }
+    else if (pID < 0)
+    {
+        cout << "fail to fork" << endl;
+    }
     
-   /*
+   
     
     if(!(in = popen("./my_server", "w")))
     {
         return 1;
-    }*/   
-    /*
+    }   
+    
     while(fgets(buff, sizeof(buff), in) != NULL)
     {
         cout << buff;
     }
     
     pclose(in);  */
-    
-    return 0;    
 }
 
 
