@@ -22,7 +22,7 @@ class NodeHandler : virtual public NodeIf {
     // Your initialization goes here
   }
 
-  void find_successor(finger_entry& _return, const int32_t id) {
+  void find_successor(finger_entry& _return, const finger_entry& caller) {
     // Your implementation goes here
     printf("find_successor\n");
   }

@@ -15,7 +15,7 @@ namespace mp2 {
 class NodeIf {
  public:
   virtual ~NodeIf() {}
-  virtual void find_successor(finger_entry& _return, const int32_t id) = 0;
+  virtual void find_successor(finger_entry& _return, const finger_entry& caller) = 0;
   virtual void closest_preceding_finger(finger_entry& _return, const int32_t id) = 0;
   virtual void get_successor(finger_entry& _return) = 0;
   virtual void get_predecessor(finger_entry& _return) = 0;
@@ -51,7 +51,7 @@ class NodeIfSingletonFactory : virtual public NodeIfFactory {
 class NodeNull : virtual public NodeIf {
  public:
   virtual ~NodeNull() {}
-  void find_successor(finger_entry& /* _return */, const int32_t /* id */) {
+  void find_successor(finger_entry& /* _return */, const finger_entry& /* caller */) {
     return;
   }
   void closest_preceding_finger(finger_entry& /* _return */, const int32_t /* id */) {
@@ -76,29 +76,29 @@ class NodeNull : virtual public NodeIf {
 };
 
 typedef struct _Node_find_successor_args__isset {
-  _Node_find_successor_args__isset() : id(false) {}
-  bool id;
+  _Node_find_successor_args__isset() : caller(false) {}
+  bool caller;
 } _Node_find_successor_args__isset;
 
 class Node_find_successor_args {
  public:
 
-  Node_find_successor_args() : id(0) {
+  Node_find_successor_args() {
   }
 
   virtual ~Node_find_successor_args() throw() {}
 
-  int32_t id;
+  finger_entry caller;
 
   _Node_find_successor_args__isset __isset;
 
-  void __set_id(const int32_t val) {
-    id = val;
+  void __set_caller(const finger_entry& val) {
+    caller = val;
   }
 
   bool operator == (const Node_find_successor_args & rhs) const
   {
-    if (!(id == rhs.id))
+    if (!(caller == rhs.caller))
       return false;
     return true;
   }
@@ -120,7 +120,7 @@ class Node_find_successor_pargs {
 
   virtual ~Node_find_successor_pargs() throw() {}
 
-  const int32_t* id;
+  const finger_entry* caller;
 
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
@@ -801,8 +801,8 @@ class NodeClient : virtual public NodeIf {
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
-  void find_successor(finger_entry& _return, const int32_t id);
-  void send_find_successor(const int32_t id);
+  void find_successor(finger_entry& _return, const finger_entry& caller);
+  void send_find_successor(const finger_entry& caller);
   void recv_find_successor(finger_entry& _return);
   void closest_preceding_finger(finger_entry& _return, const int32_t id);
   void send_closest_preceding_finger(const int32_t id);
@@ -881,14 +881,14 @@ class NodeMultiface : virtual public NodeIf {
     ifaces_.push_back(iface);
   }
  public:
-  void find_successor(finger_entry& _return, const int32_t id) {
+  void find_successor(finger_entry& _return, const finger_entry& caller) {
     size_t sz = ifaces_.size();
     for (size_t i = 0; i < sz; ++i) {
       if (i == sz - 1) {
-        ifaces_[i]->find_successor(_return, id);
+        ifaces_[i]->find_successor(_return, caller);
         return;
       } else {
-        ifaces_[i]->find_successor(_return, id);
+        ifaces_[i]->find_successor(_return, caller);
       }
     }
   }

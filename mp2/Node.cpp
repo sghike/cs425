@@ -29,9 +29,9 @@ uint32_t Node_find_successor_args::read(::apache::thrift::protocol::TProtocol* i
     switch (fid)
     {
       case 1:
-        if (ftype == ::apache::thrift::protocol::T_I32) {
-          xfer += iprot->readI32(this->id);
-          this->__isset.id = true;
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->caller.read(iprot);
+          this->__isset.caller = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -51,8 +51,8 @@ uint32_t Node_find_successor_args::read(::apache::thrift::protocol::TProtocol* i
 uint32_t Node_find_successor_args::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
   xfer += oprot->writeStructBegin("Node_find_successor_args");
-  xfer += oprot->writeFieldBegin("id", ::apache::thrift::protocol::T_I32, 1);
-  xfer += oprot->writeI32(this->id);
+  xfer += oprot->writeFieldBegin("caller", ::apache::thrift::protocol::T_STRUCT, 1);
+  xfer += this->caller.write(oprot);
   xfer += oprot->writeFieldEnd();
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -62,8 +62,8 @@ uint32_t Node_find_successor_args::write(::apache::thrift::protocol::TProtocol* 
 uint32_t Node_find_successor_pargs::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
   xfer += oprot->writeStructBegin("Node_find_successor_pargs");
-  xfer += oprot->writeFieldBegin("id", ::apache::thrift::protocol::T_I32, 1);
-  xfer += oprot->writeI32((*(this->id)));
+  xfer += oprot->writeFieldBegin("caller", ::apache::thrift::protocol::T_STRUCT, 1);
+  xfer += (*(this->caller)).write(oprot);
   xfer += oprot->writeFieldEnd();
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -1072,19 +1072,19 @@ uint32_t Node_store_file_presult::read(::apache::thrift::protocol::TProtocol* ip
   return xfer;
 }
 
-void NodeClient::find_successor(finger_entry& _return, const int32_t id)
+void NodeClient::find_successor(finger_entry& _return, const finger_entry& caller)
 {
-  send_find_successor(id);
+  send_find_successor(caller);
   recv_find_successor(_return);
 }
 
-void NodeClient::send_find_successor(const int32_t id)
+void NodeClient::send_find_successor(const finger_entry& caller)
 {
   int32_t cseqid = 0;
   oprot_->writeMessageBegin("find_successor", ::apache::thrift::protocol::T_CALL, cseqid);
 
   Node_find_successor_pargs args;
-  args.id = &id;
+  args.caller = &caller;
   args.write(oprot_);
 
   oprot_->writeMessageEnd();
@@ -1536,7 +1536,7 @@ void NodeProcessor::process_find_successor(int32_t seqid, ::apache::thrift::prot
 
   Node_find_successor_result result;
   try {
-    iface_->find_successor(result.success, args.id);
+    iface_->find_successor(result.success, args.caller);
     result.__isset.success = true;
   } catch (const std::exception& e) {
     if (this->eventHandler_.get() != NULL) {
