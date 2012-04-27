@@ -20,6 +20,8 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
 
 using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
@@ -75,8 +77,8 @@ class Node {
         introducerPort = port;
       else 
         introducerPort = -1;
-      stabilizeInterval = 10;
-      fixInterval = 10;
+      stabilizeInterval = 1;
+      fixInterval = 1;
       seed = 10;
       srand(seed);
     }
@@ -226,16 +228,14 @@ class NodeHandler : virtual public NodeIf {
     finger_entry n = me->find_predecessor(id);
     printf("found predecessor!!\n");
     
-    if(n.id == me->id)
-    {
-        _return.id = me->successor.id;
-        _return.port = me->successor.port;
+    if (n.id == me->id) {
+      _return.id = me->successor.id;
+      _return.port = me->successor.port;
     }
-    if(me->id == 0 && me->successor.id==0)
-    {
-        me->successor.id = id;
-        me->predecessor.id = id;
-       return;
+    if (me->id == 0 && me->successor.id == 0) {
+      me->successor.id = id;
+      me->predecessor.id = id;
+      return;
     }
     boost::shared_ptr<TSocket> socket(new TSocket("localhost", n.port));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
@@ -302,9 +302,28 @@ class NodeHandler : virtual public NodeIf {
     printf("store_file\n");
     // store (hey_id, s) in me->files;
     // return success or failure
+    return 1;
   }
 
 };
+
+
+void *stabilize(void *stabilizeInterval) {
+  while (1) {
+    sleep(*((int *)stabilizeInterval));
+    me->stabilize();
+  }
+  return NULL;
+}
+
+void *fixFingers(void *fixInterval) {
+  while (1) {
+    sleep(*((int *)fixInterval));
+    me->fix_fingers();
+  }
+  return NULL;
+}
+
 
 int main(int argc, char **argv) {
 //  INIT_LOCAL_LOGGER();
@@ -419,8 +438,20 @@ int main(int argc, char **argv) {
     me->join(0);
   }
 
-  server.serve();
+  pthread_t stabilizer_thread, finger_thread;
+  if (pthread_create(&stabilizer_thread, NULL, stabilize, 
+        (void *)&(me->stabilizeInterval))) {
+    cout << "Error in stabilizer thread creation." << endl;
+    exit(1);
+  }
+  if (pthread_create(&finger_thread, NULL, fixFingers, 
+        (void *)&(me->fixInterval))) {
+    cout << "Error in Finger thread creation." << endl;
+    exit(1);
+  }
   
+  server.serve();
+
   return 0;
 }
 

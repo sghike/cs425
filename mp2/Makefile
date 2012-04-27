@@ -6,7 +6,7 @@ BOOST_DIR := /usr/local/include
 
 INC += -I$(THRIFT_DIR) -I$(BOOST_DIR)
 
-LINK += -L/class/ece428/libs/lib -Wl,-rpath,/class/ece428/libs/lib -lm
+LINK += -L/class/ece428/libs/lib -Wl,-rpath,/class/ece428/libs/lib -lm -pthread
 
 .PHONY: all clean
 
@@ -18,8 +18,8 @@ all: node listener
 node: Node_server.o $(GEN_OBJ)
 	$(CXX) $(LINK) -lthrift $^ -o $@
 
-listener: listener.cpp listener.hpp
-	$(CXX) listener.cpp -o listener
+listener: listener.cpp listener.hpp sha1.c
+	$(CXX) $(LINK) -lthrift sha1.c  listener.cpp -o listener
 
 clean:
 	$(RM) *.o node listener *~
