@@ -10,7 +10,7 @@ LINK += -L/class/ece428/libs/lib -Wl,-rpath,/class/ece428/libs/lib -lm
 
 .PHONY: all clean
 
-all: node
+all: node listener
 
 %.o: %.cpp
 	$(CXX) -Wall $(INC) -c $< -o $@
@@ -18,5 +18,8 @@ all: node
 node: Node_server.o $(GEN_OBJ)
 	$(CXX) $(LINK) -lthrift $^ -o $@
 
+listener: listener.cpp listener.hpp
+	$(CXX) listener.cpp -o listener
+
 clean:
-	$(RM) *.o node
+	$(RM) *.o node listener *~

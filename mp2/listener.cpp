@@ -230,32 +230,25 @@ int main(int argc, char* argv[])
     // take inputs from the terminal
     while(1)
     {
-        
-        // start node 0 if atn != 1
-        if(introducer_port == 0)
-            add_node_func("ADD_NODE 0", ports, m_val, si_val, fi_val, lc);
-        
         cout << "INPUT : ";
         getline(cin, input);
-        
+         
         // obtain first word
-        ss << input;
-        ss >> command;
-        cout << command << "\n";        
+        command = input;
                 
         // decide command 
-        if(command.compare("ADD_NODE") == 0)
+        if(command.compare(0, 8, "ADD_NODE") == 0)
             cmp = 0;
-        else if(command.compare("ADD_FILE") == 0)
+        else if(command.compare(0, 8, "ADD_FILE") == 0)
             cmp = 1;
-        else if(command.compare("DEL_FILE") == 0)
+        else if(command.compare(0, 8, "DEL_FILE") == 0)
             cmp = 2;
-        else if(command.compare("GET_FILE") == 0)
+        else if(command.compare(0, 8, "GET_FILE") == 0)
             cmp = 3;
-        else if(command.compare("GET_TABLE") == 0)
+        else if(command.compare(0, 9, "GET_TABLE") == 0)
             cmp = 4;
         else
-            cout << "wrong command\n";    
+            cout << "wrong command" << command << endl;    
           
         switch(cmp)
         {
@@ -285,9 +278,9 @@ int main(int argc, char* argv[])
         }
         
         // clear containers
-        ss.str(std::string());
         input.clear();
         command.clear();
+        cmp = -1;
     }
     
     return 0;
@@ -572,7 +565,7 @@ int make_syscall(std::string m_val, int ID, int port_num, std::string si_val,
 
     cout << command << endl;
  
-//    in = popen(command, "r");
+    in = popen(command.c_str(), "r");
     return 0;
 
 

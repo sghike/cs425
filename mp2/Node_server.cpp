@@ -371,7 +371,13 @@ int main(int argc, char **argv) {
   shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
 
   TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+  
+  if (me->id > 0) {
+    me->join(0);
+  }
+
   server.serve();
+  
   return 0;
 }
 
