@@ -15,3 +15,7 @@ service Node {
         void add_file(1:i32 key_id, 2:string s);
         i32 store_file(1:i32 key_id, 2:string s);
 }
+
+service ListenerService {
+	
+}

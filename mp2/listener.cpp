@@ -17,7 +17,6 @@
 #include "listener.hpp"
 #include <netdb.h>
 #include <arpa/inet.h>
-#include "Node.h"
 #include <transport/TSocket.h>
 #include <transport/TBufferTransports.h>
 #include <protocol/TBinaryProtocol.h>
@@ -29,6 +28,7 @@
 #endif
 #include "sha1.h"
 #include <fcntl.h>
+#include "ListenerService.h"
 
 using namespace std;
 using namespace ::apache::thrift;
