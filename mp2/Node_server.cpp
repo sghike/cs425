@@ -64,10 +64,10 @@ class Node {
       this->m = m;
       this->id = id;
       this->port = port;
-      predecessor.id = -1;
-      predecessor.port = -1;
-      successor.id = -1;
-      successor.port = -1;
+      predecessor.id = 0;
+      predecessor.port = 0;
+      successor.id = 0;
+      successor.port = 0;
       for (i = 0; i < m; i++)
         finger_table.push_back(null_finger);
       if (id == 0)
@@ -82,6 +82,8 @@ class Node {
 
     void setIntroducerPort(int introducerPort) {
       this->introducerPort = introducerPort;
+      predecessor.port = introducerPort;
+      successor.port = introducerPort;
     }
 
     void setStabilizeInterval(int stabilizeInterval) {
@@ -99,7 +101,13 @@ class Node {
 
     finger_entry find_successor_local(int id) {
       finger_entry n = find_predecessor(id);
-
+      if(n.id == this->id)
+      {
+        finger_entry _return;
+        _return.id = this->successor.id;
+        _return.port = this->successor.port;
+        return _return;
+      }
       boost::shared_ptr<TSocket> socket(new TSocket("localhost", n.port));
       boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
       boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
@@ -115,11 +123,12 @@ class Node {
 
     finger_entry find_predecessor(int id) {
       finger_entry n;
-      n.id = id;
-      n.port = port;
+      n.id = this->id;
+      n.port = this->port;
       int succ = successor.id;
-
-      while (!((succ > n.id && (id > n.id && id <= succ)) || 
+      printf("before while loop!!\n");
+      printf("successor is %d and n.id is %d\n", succ, n.id);
+      while ((succ != n.id) && !((succ > n.id && (id > n.id && id <= succ)) || 
              (n.id > succ && (id > n.id || id <= succ)))) {
         boost::shared_ptr<TSocket> socket1(new TSocket("localhost", n.port));
         boost::shared_ptr<TTransport> transport1(new TBufferedTransport(socket1));
@@ -140,6 +149,7 @@ class Node {
         succ = n_successor.id;
         transport2->close();
       }
+
       return n;
     }
 
@@ -155,10 +165,12 @@ class Node {
       NodeClient client(protocol);
       transport->open();
 
-      finger_entry successor;
-      client.find_successor(successor, id);
+      finger_entry succ;
+      client.find_successor(succ, id);
 
-      transport->close();     
+      transport->close(); 
+      this->successor = succ;
+      finger_table[0] = this->successor;    
       cout << "node = <" << id << ">: initial sucessor= <" << successor.id << ">" << endl;
     }
 
@@ -176,6 +188,7 @@ class Node {
       if ((id < successor.id && (x.id > id && x.id < successor.id)) ||
           (successor.id < id && (x.id > id || x.id < successor.id))) {
         successor = x;
+        finger_table[0] = successor;
       }
 
       transport->open();
@@ -208,14 +221,28 @@ class NodeHandler : virtual public NodeIf {
   void find_successor(finger_entry& _return, const int32_t id) {
     // Your implementation goes here
     printf("find_successor\n");
+    
     finger_entry n = me->find_predecessor(id);
-
+    printf("found predecessor!!\n");
+    
+    if(n.id == me->id)
+    {
+        _return.id = me->successor.id;
+        _return.port = me->successor.port;
+    }
+    if(me->id == 0 && me->successor.id==0)
+    {
+        me->successor.id = id;
+        me->predecessor.id = id;
+       return;
+    }
     boost::shared_ptr<TSocket> socket(new TSocket("localhost", n.port));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
     NodeClient client(protocol);
     transport->open();
 
+    printf("n id is %d n port is %d\n", n.id, n.port);
     client.get_successor(_return);
     
     transport->close();
