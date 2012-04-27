@@ -7,7 +7,7 @@ void add_node_func(std::string input, std::vector<int> ports, std::string m_val,
                    std::string si_val, std::string fi_val, int lc);
 int add_node(int ID, std::vector<int> ports, std::string m_val, std::string si_val,
              std::string fi_val, int lc);
-int add_file(std::string input);
+int add_file(std::string input, std::string m_val);
 int del_file(std::string input);
 int get_file(std::string input);
 int get_table(std::string input);

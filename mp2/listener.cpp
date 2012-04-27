@@ -17,8 +17,26 @@
 #include "listener.hpp"
 #include <netdb.h>
 #include <arpa/inet.h>
+#include "Node.h"
+#include <transport/TSocket.h>
+#include <transport/TBufferTransports.h>
+#include <protocol/TBinaryProtocol.h>
+#include <server/TSimpleServer.h>
+#include <transport/TServerSocket.h>
+#include <transport/TBufferTransports.h>
+#ifdef WIN32
+#include <io.h>
+#endif
+#include "sha1.h"
+#include <fcntl.h>
 
 using namespace std;
+using namespace ::apache::thrift;
+using namespace ::apache::thrift::protocol;
+using namespace ::apache::thrift::transport;
+using namespace ::apache::thrift::server;
+using namespace ::mp2;
+using boost::shared_ptr;
 
 int introducer_port;
 
@@ -262,7 +280,7 @@ int main(int argc, char* argv[])
                     add_node_func(input, ports, m_val, si_val, fi_val, lc);
                 break;
             case 1:
-                add_file(input);
+                add_file(input, m_val);
                 break;
             case 2:
                 del_file(input);
@@ -298,6 +316,10 @@ void add_node_func(std::string input, vector<int> ports, std::string m_val,
     while(ss >> buf) 
          tokens.push_back(buf);
 
+    if(tokens.size() < 2)
+    {
+        cout << "specify at least one node" << endl;
+    }
     // parse out node numbers
     for(it = tokens.begin()+1; it < tokens.end(); it++)
     {
@@ -352,14 +374,22 @@ int add_node(int ID, vector<int> ports, std::string  m_val, std::string si_val,
 }
 
 // pass to introducer
-int add_file(std::string input)
+int add_file(std::string input, std::string m_val)
 {
     std::string buf;
     std::stringstream ss;
     std::string filename, data;
     vector<std::string> tokens;
     vector<std::string>::iterator it;
+    int m;
+    SHA1Context sha;
+    FILE *fp;
+    int key_id;
     
+
+    // change m_val into an integer
+    m = atoi(m_val.c_str()); 
+
     ss << input;
     while(ss >> buf) 
          tokens.push_back(buf);
@@ -373,8 +403,21 @@ int add_file(std::string input)
     cout << "filename is : " << filename << endl;
     cout << "file data is : " << data << endl;
     
-    // pass tokens[it] to introducer
-        
+    // create sha-1 key
+    SHA1Reset(&sha);
+    SHA1Input(&sha, (unsigned char*)filename.c_str(), filename.size());
+    if (!SHA1Result(&sha))
+    {
+        cout << "key_gen_test: could not compute key ID for" << filename << endl;
+    }
+    else
+    {
+        key_id = sha.Message_Digest[4]%((int)pow(2,m)) ;
+        cout << "Key ID for " << filename << " : " << key_id << endl;
+    }
+    
+    // sending information to introducer
+    
     return 0;
 }
 
@@ -596,6 +639,4 @@ int make_syscall(std::string m_val, int ID, int port_num, std::string si_val,
     
     pclose(in);  */
 }
-
-
 

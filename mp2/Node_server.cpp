@@ -292,17 +292,39 @@ class NodeHandler : virtual public NodeIf {
   void add_file(const int32_t key_id, const std::string& s) {
     // Your implementation goes here
     printf("add_file\n");
+    finger_entry n;
     //call me->find_sucessor_local(key_id);
+    n = me->find_successor_local(key_id);
+    
     //call store_file on destination
+    //use thrift
+    boost::shared_ptr<TSocket> socket(new TSocket("localhost", n.port));
+    boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+    boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+    NodeClient client(protocol);
+    transport->open();
+    // call rpc  
+    client.store_file(key_id, s);
+     
+    transport->close();
+
   }
 
   /* Return success or failure. */
   int32_t store_file(const int32_t key_id, const std::string& s) {
     // Your implementation goes here
     printf("store_file\n");
-    // store (hey_id, s) in me->files;
-    // return success or failure
-    return 1;
+    pair<map<int, string>::iterator, bool> check; 
+
+    // store (key_id, s) in me->files;
+    check = me->files.insert(pair<int, string>(key_id, s)); 
+    if(check.second == false)
+    {
+        printf("file with same key exists already");
+        return -1; //failure
+    }
+    else
+        return 0; // success
   }
 
 };
