@@ -39,6 +39,7 @@ using namespace ::mp2;
 using boost::shared_ptr;
 
 int introducer_port;
+int atn_port;
 
 int main(int argc, char* argv[])
 {
@@ -71,6 +72,10 @@ int main(int argc, char* argv[])
     std::string fi_val;
     std::string atn_val;  
     
+    // initialize global variables
+    introducer_port = 0;
+    atn_port = 0;
+
     // parse out arguments and check if they are valid
     for(i = 1; i < argc; i++)
     {
@@ -173,6 +178,7 @@ int main(int argc, char* argv[])
         }
         atn_val.assign(argv[atn_pos+1]);
         check_int.clear();
+        attach_to_node(atn_val); 
     }
 
     if(sp == 1)
@@ -302,6 +308,13 @@ int main(int argc, char* argv[])
     }
     
     return 0;
+}
+
+void attach_to_node(std::string port)
+{
+   // connect to node with port
+   
+
 }
 
 void add_node_func(std::string input, vector<int> ports, std::string m_val,

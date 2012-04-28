@@ -8,6 +8,9 @@
 #include <server/TSimpleServer.h>
 #include <transport/TServerSocket.h>
 #include <transport/TBufferTransports.h>
+#include <concurrency/ThreadManager.h>
+#include <concurrency/PosixThreadFactory.h>
+#include <server/TThreadedServer.h>
 #include <iostream>
 #include <assert.h>
 #include <stdint.h>
@@ -27,6 +30,7 @@ using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
 using namespace ::apache::thrift::transport;
 using namespace ::apache::thrift::server;
+using namespace ::apache::thrift::concurrency;
 
 using boost::shared_ptr;
 
@@ -113,9 +117,9 @@ class Node {
     }
 
     finger_entry find_successor_local(int id) {
-      printf("id = %d in find_successor_local\n", id);
+      // printf("id = %d in find_successor_local\n", id);
       finger_entry n = find_predecessor(id);
-      printf("predecessor = %d %d \n", n.id, n.port);
+      // printf("predecessor = %d %d \n", n.id, n.port);
       if(n.id == this->id)
       {
         finger_entry _return;
@@ -141,8 +145,6 @@ class Node {
       n.id = this->id;
       n.port = this->port;
       int succ = successor.id;
-      printf("before while loop!!\n");
-      printf("successor is %d and n.id is %d\n", succ, n.id);
       while ((succ != n.id) && !((succ > n.id && (id > n.id && id <= succ)) || 
              (n.id > succ && (id > n.id || id <= succ)))) {
         boost::shared_ptr<TSocket> socket1(new TSocket("localhost", n.port));
@@ -152,7 +154,6 @@ class Node {
         transport1->open();
         client1.closest_preceding_finger(n, id);
         transport1->close();
-        printf("closes_preceding_finger is %d, %d\n", n.id, n.port); 
         boost::shared_ptr<TSocket> socket2(new TSocket("localhost", n.port));
         boost::shared_ptr<TTransport> 
           transport2(new TBufferedTransport(socket2));
@@ -163,7 +164,6 @@ class Node {
         client2.get_successor(n_successor);
         succ = n_successor.id;
         transport2->close();
-        printf("closest_preceding_finger is %d, new successor = %d\n", n.id, n_successor.id);
       }
 
       return n;
@@ -198,7 +198,7 @@ class Node {
     }
 
     void stabilize() {
-      printf("in stabilize\n");
+      // printf("in stabilize\n");
       boost::shared_ptr<TSocket> socket(new TSocket("localhost", 
             successor.port));
       boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
@@ -228,10 +228,10 @@ class Node {
     }
 
     void fix_fingers() {
-      printf("inside fix fingers\n");
+      // printf("inside fix fingers\n");
       int i = (rand() % (m-1)) + 1;
       int start = (id + ipow(2, i)) % ipow(2, m);
-      printf("i is %d and start is %d", i, start);
+      // printf("i is %d and start is %d", i, start);
       finger_entry new_finger = find_successor_local(start);
       if (finger_table[i] != new_finger) {
         finger_table[i] = new_finger;
@@ -250,10 +250,9 @@ class NodeHandler : virtual public NodeIf {
   
   void find_successor(finger_entry& _return, const finger_entry& caller) {
     // Your implementation goes here
-    printf("find_successor\n");
+    // printf("find_successor\n");
     
     finger_entry n = me->find_predecessor(caller.id);
-    printf("found predecessor!!\n");
     
     if (n.id == me->id) {
       _return.id = me->successor.id;
@@ -276,7 +275,7 @@ class NodeHandler : virtual public NodeIf {
     NodeClient client(protocol);
     transport->open();
 
-    printf("n id is %d n port is %d\n", n.id, n.port);
+   //  printf("n id is %d n port is %d\n", n.id, n.port);
     client.get_successor(_return);
     
     transport->close();
@@ -285,7 +284,7 @@ class NodeHandler : virtual public NodeIf {
 
   void closest_preceding_finger(finger_entry& _return, const int32_t id) {
     // Your implementation goes here
-    printf("closest_preceding_finger\n");
+    // printf("closest_preceding_finger\n");
     int i;
     for (i = me->m - 1; i >= 0; i--) {
       int finger_id = me->finger_table[i].id;
@@ -304,22 +303,23 @@ class NodeHandler : virtual public NodeIf {
   
   void get_successor(finger_entry& _return) {
     // Your implementation goes here
-    printf("get_successor\n");
+    // printf("get_successor\n");
     _return = me->successor;
   }
 
   void get_predecessor(finger_entry& _return) {
     // Your implementation goes here
-    printf("get_predecessor\n");
+    // printf("get_predecessor\n");
     _return = me->predecessor;
   }
 
   void notify(const finger_entry& n) {
     // Your implementation goes here
-    printf("notify\n");
-    if ((me->predecessor.id = -1) || 
+    // printf("notify\n");
+    if ((me->predecessor.id == -1) || 
         ((me->predecessor.id < me->id && (n.id > me->predecessor.id && n.id < me->id)) ||
          (me->id < me->predecessor.id && (n.id > me->predecessor.id || n.id < me->id)))) {
+      printf("me->predecessor is %d and n.id is %d\n", me->predecessor.id, n.id);
       if (me->predecessor != n) {
         me->predecessor = n;
         cout << "node= <" << me->id << ">: updated predecessor= <" << n.id << ">" << endl;
@@ -486,14 +486,21 @@ int main(int argc, char **argv) {
     me->setSeed(seed);
   }
 
+
+
   shared_ptr<NodeHandler> handler(new NodeHandler());
   shared_ptr<TProcessor> processor(new NodeProcessor(handler));
   shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
   shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
   shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
-
-  TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+  shared_ptr<ThreadManager> threadManager = ThreadManager::newSimpleThreadManager(4);
+  shared_ptr<PosixThreadFactory> threadFactory = shared_ptr<PosixThreadFactory>(new PosixThreadFactory());
+  threadManager->threadFactory(threadFactory);
+  threadManager->start();
+  TThreadedServer server(processor, serverTransport, transportFactory, protocolFactory);
   
+
+
   if (me->id > 0) {
     me->join(0);
   }
