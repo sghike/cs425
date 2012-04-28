@@ -57,6 +57,11 @@ class NodeHandler : virtual public NodeIf {
     printf("store_file\n");
   }
 
+  void get_table(std::vector<finger_entry> & _return, const int32_t id) {
+    // Your implementation goes here
+    printf("get_table\n");
+  }
+
 };
 
 int main(int argc, char **argv) {

@@ -238,6 +238,7 @@ class Node {
         cout << "node= <" << id << ">: updated finger entry: i= <" << i+1 << ">, pointer= <" << new_finger.id << ">" << endl;
       }
     }
+  
 };
 
 Node *me;
@@ -291,8 +292,7 @@ class NodeHandler : virtual public NodeIf {
       if(finger_id == -1)
            continue;
       if ((me->id < id && (finger_id > me->id && finger_id < id)) ||
-          (me->id > id && (finger_id < id || finger_id > me->id)))
-      {
+          (me->id > id && (finger_id < id || finger_id > me->id))) {
         _return = me->finger_table[i];
         return;
       }
@@ -326,6 +326,41 @@ class NodeHandler : virtual public NodeIf {
       }
     }
   }
+  
+  void get_table(std::vector<finger_entry> & _return, const int32_t id) {
+    // Your implementation goes here
+    printf("get_table\n");
+    if (me->id == id) {
+      _return = me->finger_table;
+      return;
+    } else {
+      finger_entry pred;
+      pred = me->find_predecessor(id);
+      finger_entry pred_succ;
+      boost::shared_ptr<TSocket> socket(new TSocket("localhost", pred.port));
+      boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+      boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+      NodeClient client(protocol);
+      transport->open();
+      client.get_successor(pred_succ);
+      transport->close();
+
+      if (pred_succ.id != id) {
+        return;
+      } else {
+        boost::shared_ptr<TSocket> socket1(new TSocket("localhost", 
+              pred_succ.port));
+        boost::shared_ptr<TTransport> 
+          transport1(new TBufferedTransport(socket1));
+        boost::shared_ptr<TProtocol> protocol1(new TBinaryProtocol(transport1));
+        NodeClient client1(protocol1);
+        transport1->open();
+        client1.get_table(_return, id);
+        transport1->close();
+      }
+    }
+  }
+
   
   void add_file(const int32_t key_id, const std::string& s) {
     // Your implementation goes here

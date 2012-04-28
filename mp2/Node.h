@@ -22,6 +22,7 @@ class NodeIf {
   virtual void notify(const finger_entry& n) = 0;
   virtual void add_file(const int32_t key_id, const std::string& s) = 0;
   virtual int32_t store_file(const int32_t key_id, const std::string& s) = 0;
+  virtual void get_table(std::vector<finger_entry> & _return, const int32_t id) = 0;
 };
 
 class NodeIfFactory {
@@ -72,6 +73,9 @@ class NodeNull : virtual public NodeIf {
   int32_t store_file(const int32_t /* key_id */, const std::string& /* s */) {
     int32_t _return = 0;
     return _return;
+  }
+  void get_table(std::vector<finger_entry> & /* _return */, const int32_t /* id */) {
+    return;
   }
 };
 
@@ -781,6 +785,114 @@ class Node_store_file_presult {
 
 };
 
+typedef struct _Node_get_table_args__isset {
+  _Node_get_table_args__isset() : id(false) {}
+  bool id;
+} _Node_get_table_args__isset;
+
+class Node_get_table_args {
+ public:
+
+  Node_get_table_args() : id(0) {
+  }
+
+  virtual ~Node_get_table_args() throw() {}
+
+  int32_t id;
+
+  _Node_get_table_args__isset __isset;
+
+  void __set_id(const int32_t val) {
+    id = val;
+  }
+
+  bool operator == (const Node_get_table_args & rhs) const
+  {
+    if (!(id == rhs.id))
+      return false;
+    return true;
+  }
+  bool operator != (const Node_get_table_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_get_table_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class Node_get_table_pargs {
+ public:
+
+
+  virtual ~Node_get_table_pargs() throw() {}
+
+  const int32_t* id;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _Node_get_table_result__isset {
+  _Node_get_table_result__isset() : success(false) {}
+  bool success;
+} _Node_get_table_result__isset;
+
+class Node_get_table_result {
+ public:
+
+  Node_get_table_result() {
+  }
+
+  virtual ~Node_get_table_result() throw() {}
+
+  std::vector<finger_entry>  success;
+
+  _Node_get_table_result__isset __isset;
+
+  void __set_success(const std::vector<finger_entry> & val) {
+    success = val;
+  }
+
+  bool operator == (const Node_get_table_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const Node_get_table_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_get_table_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _Node_get_table_presult__isset {
+  _Node_get_table_presult__isset() : success(false) {}
+  bool success;
+} _Node_get_table_presult__isset;
+
+class Node_get_table_presult {
+ public:
+
+
+  virtual ~Node_get_table_presult() throw() {}
+
+  std::vector<finger_entry> * success;
+
+  _Node_get_table_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
 class NodeClient : virtual public NodeIf {
  public:
   NodeClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
@@ -822,6 +934,9 @@ class NodeClient : virtual public NodeIf {
   int32_t store_file(const int32_t key_id, const std::string& s);
   void send_store_file(const int32_t key_id, const std::string& s);
   int32_t recv_store_file();
+  void get_table(std::vector<finger_entry> & _return, const int32_t id);
+  void send_get_table(const int32_t id);
+  void recv_get_table(std::vector<finger_entry> & _return);
  protected:
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
@@ -842,6 +957,7 @@ class NodeProcessor : public ::apache::thrift::TProcessor {
   void process_notify(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_add_file(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_store_file(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_get_table(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
   NodeProcessor(boost::shared_ptr<NodeIf> iface) :
     iface_(iface) {
@@ -852,6 +968,7 @@ class NodeProcessor : public ::apache::thrift::TProcessor {
     processMap_["notify"] = &NodeProcessor::process_notify;
     processMap_["add_file"] = &NodeProcessor::process_add_file;
     processMap_["store_file"] = &NodeProcessor::process_store_file;
+    processMap_["get_table"] = &NodeProcessor::process_get_table;
   }
 
   virtual bool process(boost::shared_ptr<apache::thrift::protocol::TProtocol> piprot, boost::shared_ptr<apache::thrift::protocol::TProtocol> poprot, void* callContext);
@@ -950,6 +1067,18 @@ class NodeMultiface : virtual public NodeIf {
         return ifaces_[i]->store_file(key_id, s);
       } else {
         ifaces_[i]->store_file(key_id, s);
+      }
+    }
+  }
+
+  void get_table(std::vector<finger_entry> & _return, const int32_t id) {
+    size_t sz = ifaces_.size();
+    for (size_t i = 0; i < sz; ++i) {
+      if (i == sz - 1) {
+        ifaces_[i]->get_table(_return, id);
+        return;
+      } else {
+        ifaces_[i]->get_table(_return, id);
       }
     }
   }

@@ -14,6 +14,7 @@ service Node {
         void notify(1:finger_entry n);
         void add_file(1:i32 key_id, 2:string s);
         i32 store_file(1:i32 key_id, 2:string s);
+        list<finger_entry> get_table(1:i32 id);
 }
 
 service ListenerService {
