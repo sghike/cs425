@@ -1,7 +1,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <stdint.h>
-// #include <iomanip>
+#include <iomanip>
 #include <string.h>
 #include <sstream>
 #include <iostream>
@@ -29,6 +29,7 @@
 #include "sha1.h"
 #include <fcntl.h>
 #include "ListenerService.h"
+#include "Node.h"
 
 using namespace std;
 using namespace ::apache::thrift;
@@ -178,7 +179,7 @@ int main(int argc, char* argv[])
         }
         atn_val.assign(argv[atn_pos+1]);
         check_int.clear();
-        attach_to_node(atn_val); 
+        atn_port = atoi(atn_val.c_str());
     }
 
     if(sp == 1)
@@ -295,7 +296,7 @@ int main(int argc, char* argv[])
                 get_file(input);
                 break;
             case 4:
-                get_table(input);
+                get_table(input, m_val);
                 break;
             case -1:
                 break;
@@ -310,13 +311,7 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-void attach_to_node(std::string port)
-{
-   // connect to node with port
-   
-
-}
-
+// process the nodes that needs to be added to the chord system 
 void add_node_func(std::string input, vector<int> ports, std::string m_val,
                    std::string si_val, std::string fi_val, int lc)
 {
@@ -345,7 +340,7 @@ void add_node_func(std::string input, vector<int> ports, std::string m_val,
     return;
 }
 
-// 
+// add a node to the chord system  
 int add_node(int ID, vector<int> ports, std::string  m_val, std::string si_val,
              std::string fi_val, int lc)
 {
@@ -355,6 +350,7 @@ int add_node(int ID, vector<int> ports, std::string  m_val, std::string si_val,
     int seed = 0;
     
     // pick a port number 49152 and 65535
+    // registered and well-known ports are not used
     // check if the port is available
     srand (time(NULL));
     
@@ -378,15 +374,15 @@ int add_node(int ID, vector<int> ports, std::string  m_val, std::string si_val,
     
     // create a process listening on port rand_port
     if(make_syscall(m_val, ID, port_num, si_val, fi_val, lc, seed) == 1)
-        cout << "syscall failed";
-    
-    // contact the introducer
-    
+    {
+        cout << "syscall failed"; 
+        return 1;
+    }
     
     return 0;
 }
 
-// pass to introducer
+// add file to the chord system
 int add_file(std::string input, std::string m_val)
 {
     std::string buf;
@@ -398,7 +394,6 @@ int add_file(std::string input, std::string m_val)
     SHA1Context sha;
     FILE *fp;
     int key_id;
-    
 
     // change m_val into an integer
     m = atoi(m_val.c_str()); 
@@ -430,18 +425,37 @@ int add_file(std::string input, std::string m_val)
     }
     
     // sending information to introducer
-    
+    if(introducer_port != 0)
+    {
+      boost::shared_ptr<TSocket> socket(new TSocket("localhost", introducer_port));
+    }
+    else if(atn_port != 0)
+    {
+      boost::shared_ptr<TSocket> socket(new TSocket("localhost", atn_port));
+    }
+    else 
+    {
+       cout << "listener is not connected to any node" << endl;
+       return 1;
+    }
+    boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+    boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+    NodeClient client(protocol);
+    transport->open();
+    // call rpc function
+    int id  = client.add_file(key_id, filename, data);
+    if(id > -1)
+    {
+        get_ADD_FILE_result_as_string(filename.c_str(), key_id, id);
+    } 
+    else 
+       cout << "error in adding file" << endl;
+    transport->close(); 
+      
     return 0;
 }
 
-/*int attach_to_node(std::string atn_val)
-{
-    int port;
-
-    atoi
-}*/
-
-// pass to introducer
+// delete the file specified
 int del_file(std::string input)
 {
     std::string buf;
@@ -449,7 +463,10 @@ int del_file(std::string input)
     std::string filename;
     vector<std::string> tokens;
     vector<std::string>::iterator it;
-    
+    int key_id;
+    SHA1Context sha;
+    FILE *fp;
+
     ss << input;
     while(ss >> buf) 
          tokens.push_back(buf);
@@ -459,13 +476,52 @@ int del_file(std::string input)
     filename.assign(*it);
     
     cout << "filename is : " << filename << endl;
-
-    // pass tokens[it] to introducer
     
+    // create sha-1 key
+    SHA1Reset(&sha);
+    SHA1Input(&sha, (unsigned char*)filename.c_str(), filename.size());
+    if (!SHA1Result(&sha))
+    {
+        cout << "key_gen_test: could not compute key ID for" << filename << endl;
+    }
+    else
+    {
+        key_id = sha.Message_Digest[4]%((int)pow(2,m)) ;
+        cout << "Key ID for " << filename << " : " << key_id << endl;
+    }
+
+    if(introducer_port != 0)
+    {
+      boost::shared_ptr<TSocket> socket(new TSocket("localhost", introducer_port));
+    }
+    else if(atn_port != 0)
+    {
+      boost::shared_ptr<TSocket> socket(new TSocket("localhost", atn_port));
+    }
+    else 
+    {
+       cout << "listener is not connected to any node" << endl;
+       return 1;
+    }
+
+    boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+    boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+    NodeClient client(protocol);
+    transport->open();
+    // call rpc function
+    int id  = client.del_file(key_id);
+    if(id > -1)
+    {
+        get_ADD_FILE_result_as_string(filename, key_id, id);
+    } 
+    else 
+       cout << "error in adding file" << endl;
+    transport->close(); 
+     
     return 0;
 }
 
-// pass to introducer
+// get the file contents of the file specified
 int get_file(std::string input)
 {
     std::string buf;
@@ -473,7 +529,11 @@ int get_file(std::string input)
     std::string filename;
     vector<std::string> tokens;
     vector<std::string>::iterator it;
-    
+    int key_id;
+    SHA1Context sha;
+    FILE *fp;
+
+
     ss << input;
     while(ss >> buf) 
          tokens.push_back(buf);
@@ -483,21 +543,58 @@ int get_file(std::string input)
     filename.assign(*it);
     
     cout << "filename is : " << filename << endl;
+     // create sha-1 key
+    SHA1Reset(&sha);
+    SHA1Input(&sha, (unsigned char*)filename.c_str(), filename.size());
+    if (!SHA1Result(&sha))
+    {
+        cout << "key_gen_test: could not compute key ID for" << filename << endl;
+    }
+    else
+    {
+        key_id = sha.Message_Digest[4]%((int)pow(2,m)) ;
+        cout << "Key ID for " << filename << " : " << key_id << endl;
+    }
 
     // pass tokens[it] to introducer
-    
+    if(introducer_port != 0)
+    {
+      boost::shared_ptr<TSocket> socket(new TSocket("localhost", introducer_port));
+    }
+    else if(atn_port != 0)
+    {
+      boost::shared_ptr<TSocket> socket(new TSocket("localhost", atn_port));
+    }
+    else 
+    {
+       cout << "listener is not connected to any node" << endl;
+       return 1;
+    }
+    boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+    boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+    NodeClient client(protocol);
+    transport->open();
+    //call rpc function
+    bool check;
+    int id;
+    char* fdata;
+    get_GET_FILE_result_as_string(filename.c_str(), key_id, check, id, fdata);
+    transport->close(); 
+     
     return 0;
 }
 
-// pass to introducer
-int get_table(std::string input)
+// get and print finger table of the node specified
+int get_table(std::string input, std::string m_val)
 {
     std::string buf;
     std::stringstream ss;
     char * id_num;
     vector<std::string> tokens;
     vector<std::string>::iterator it;
-    
+    unsigned int i;
+    int m;
+    m = atoi(m_val.c_str()); 
     ss << input;
     
     while(ss >> buf) 
@@ -508,11 +605,38 @@ int get_table(std::string input)
     strcpy(id_num, it->c_str());
     cout << "getting finger table and key table for node : " << atoi(id_num) << "\n";
            
-    // pass tokens[it] to introducer
-    
+    // ask the node for the finger table
+    if(introducer_port != 0)
+    {
+      boost::shared_ptr<TSocket> socket(new TSocket("localhost", introducer_port));
+    }
+    else if(atn_port != 0)
+    {
+      boost::shared_ptr<TSocket> socket(new TSocket("localhost", atn_port));
+    }
+    else 
+    {
+       cout << "listener is not connected to any node" << endl;
+       return 1;
+    }
+    boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+    boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+    NodeClient client(protocol);
+    transport->open();
+    std::vector<finger_entry> table;
+    client.get_table(table, atoi(id_num));
+      transport->close(); 
+     
+    if(table.size() == 0)
+       cout << "requested node" << id_num << "does not exist" << endl;
+    else
+    {
+       cout << get_GET_TABLE_result_as_string(table, m, 0, atoi(id_num));
+    }   
     return 0;
 }
 
+// scan available ports on local host
 int scan_port(int port_num)
 {
     struct addrinfo hints, *res;
@@ -520,7 +644,8 @@ int scan_port(int port_num)
     std::string s;
     std::stringstream ss;
     int yes = 1;
-
+    
+    // transform port_num into a string
     ss << port_num;
     s = ss.str();    
 
@@ -556,6 +681,7 @@ int scan_port(int port_num)
     return 0;
 }
 
+// do a syscall to create new nodes
 int make_syscall(std::string m_val, int ID, int port_num, std::string si_val,
                  std::string fi_val, int lc, int seed)
 {
@@ -563,7 +689,6 @@ int make_syscall(std::string m_val, int ID, int port_num, std::string si_val,
     char buff[512];
    // pid_t pID;
     std::string command = "./node";
- 
     cout << "creating a new node"<< endl;
    
     // number of bits of the keys/node IDs
@@ -620,11 +745,8 @@ int make_syscall(std::string m_val, int ID, int port_num, std::string si_val,
     }
 
     cout << command << endl;
- 
     in = popen(command.c_str(), "r");
     return 0;
-
-
 
  /*   pID = fork();
     
@@ -653,3 +775,112 @@ int make_syscall(std::string m_val, int ID, int port_num, std::string si_val,
     pclose(in);  */
 }
 
+string get_GET_TABLE_result_as_string(
+        const vector<finger_entry>& finger_table,
+        const uint32_t m,
+        const uint32_t myid,
+        const uint32_t idx_of_entry1,
+        const std::map<int32_t, std::string>& keys_table)
+    {
+        return get_finger_table_as_string(
+            finger_table, m, myid, idx_of_entry1) \
+            + \
+            get_keys_table_as_string(keys_table);
+    }
+
+
+std::string
+get_finger_table_as_string(const std::vector<finger_entry>& table,
+                           const uint32_t m,
+                           const uint32_t myid,
+                           const uint32_t idx_of_entry1)
+{
+    std::stringstream s;
+    assert(table.size() == (idx_of_entry1 + m));
+    s << "finger table:\n";
+    for (size_t i = 1; (i - 1 + idx_of_entry1) < table.size(); ++i) {
+        using std::setw;
+        s << "entry: i= " << setw(2) << i << ", interval=["
+          << setw(4) << (myid + (int)pow(2, i-1)) % ((int)pow(2, m))
+          << ",   "
+          << setw(4) << (myid + (int)pow(2, i)) % ((int)pow(2, m))
+          << "),   node= "
+          << setw(4) << table.at(i - 1 + idx_of_entry1).id
+          << "\n";
+    }
+    return s.str();
+}
+
+std::string
+get_keys_table_as_string(const std::map<int32_t, std::string>& table)
+{
+    std::stringstream s;
+    std::map<int32_t, std::string>::const_iterator it = table.begin();
+    /* std::map keeps the keys sorted, so our iteration will be in
+ *      * ascending order of the keys
+ *           */
+    s << "keys table:\n";
+    for (; it != table.end(); ++it) {
+        using std::setw;
+        /* assuming file names are <= 10 chars long */
+        s << "entry: k= " << setw(4) << it->first
+          << ",  fname= " << setw(10) << it->second.name
+          << ",  fdata= " << it->second.data
+          << "\n";
+    }
+    return s.str();
+}
+
+std::string get_ADD_FILE_result_as_string(const char *fname,
+                                         const int32_t key,
+                                         const int32_t nodeId)
+{
+     std::stringstream s;
+     s << "fname= " << fname << "\n";
+     s << "key= " << key << "\n";
+     s << "added to node= " << nodeId << "\n";
+     return s.str();
+}
+
+std::string get_DEL_FILE_result_as_string(const char *fname,
+                                         const int32_t key,
+                                         const bool deleted,
+                                         const int32_t nodeId)
+{
+     std::stringstream s;
+     s << "fname= " << fname << "\n";
+     s << "key= " << key << "\n";
+     if (deleted) {
+         // then nodeId is meaningful
+         s << "was stored at node= " << nodeId << "\n";
+         s << "deleted\n";
+     }
+     else {
+         // assume that this means file was not found
+         s << "file not found\n";
+     }
+     return s.str();
+}
+
+
+string get_GET_FILE_result_as_string(const char *fname,
+                                         const int32_t key,
+                                         const bool found,
+                                         const int32_t nodeId,
+                                         const char *fdata)
+{
+     std::stringstream s;
+     s << "fname= " << fname << "\n";
+     s << "key= " << key << "\n";
+     if (found) {
+         // then nodeId is meaningful
+          s << "stored at node= " << nodeId << "\n";
+          s << "fdata= " << fdata << "\n";
+     }
+     else {
+        // assume that this means file was not found
+          s << "file not found\n";
+     }
+     return s.str();
+}
+            
