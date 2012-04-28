@@ -47,17 +47,22 @@ class NodeHandler : virtual public NodeIf {
     printf("notify\n");
   }
 
-  void add_file(const int32_t key_id, const std::string& s) {
+  int32_t add_file(const int32_t key_id, const std::string& s) {
     // Your implementation goes here
     printf("add_file\n");
   }
 
-  int32_t store_file(const int32_t key_id, const std::string& s) {
+  int32_t del_file(const int32_t key_id) {
     // Your implementation goes here
-    printf("store_file\n");
+    printf("del_file\n");
   }
 
-  void get_table(std::vector<finger_entry> & _return, const int32_t id) {
+  void get_file(file_data& _return, const int32_t key_id) {
+    // Your implementation goes here
+    printf("get_file\n");
+  }
+
+  void get_table(node_table& _return, const int32_t id) {
     // Your implementation goes here
     printf("get_table\n");
   }

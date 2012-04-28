@@ -20,9 +20,10 @@ class NodeIf {
   virtual void get_successor(finger_entry& _return) = 0;
   virtual void get_predecessor(finger_entry& _return) = 0;
   virtual void notify(const finger_entry& n) = 0;
-  virtual void add_file(const int32_t key_id, const std::string& s) = 0;
-  virtual int32_t store_file(const int32_t key_id, const std::string& s) = 0;
-  virtual void get_table(std::vector<finger_entry> & _return, const int32_t id) = 0;
+  virtual int32_t add_file(const int32_t key_id, const std::string& s) = 0;
+  virtual int32_t del_file(const int32_t key_id) = 0;
+  virtual void get_file(file_data& _return, const int32_t key_id) = 0;
+  virtual void get_table(node_table& _return, const int32_t id) = 0;
 };
 
 class NodeIfFactory {
@@ -67,14 +68,18 @@ class NodeNull : virtual public NodeIf {
   void notify(const finger_entry& /* n */) {
     return;
   }
-  void add_file(const int32_t /* key_id */, const std::string& /* s */) {
-    return;
-  }
-  int32_t store_file(const int32_t /* key_id */, const std::string& /* s */) {
+  int32_t add_file(const int32_t /* key_id */, const std::string& /* s */) {
     int32_t _return = 0;
     return _return;
   }
-  void get_table(std::vector<finger_entry> & /* _return */, const int32_t /* id */) {
+  int32_t del_file(const int32_t /* key_id */) {
+    int32_t _return = 0;
+    return _return;
+  }
+  void get_file(file_data& /* _return */, const int32_t /* key_id */) {
+    return;
+  }
+  void get_table(node_table& /* _return */, const int32_t /* id */) {
     return;
   }
 };
@@ -631,18 +636,31 @@ class Node_add_file_pargs {
 
 };
 
+typedef struct _Node_add_file_result__isset {
+  _Node_add_file_result__isset() : success(false) {}
+  bool success;
+} _Node_add_file_result__isset;
 
 class Node_add_file_result {
  public:
 
-  Node_add_file_result() {
+  Node_add_file_result() : success(0) {
   }
 
   virtual ~Node_add_file_result() throw() {}
 
+  int32_t success;
 
-  bool operator == (const Node_add_file_result & /* rhs */) const
+  _Node_add_file_result__isset __isset;
+
+  void __set_success(const int32_t val) {
+    success = val;
+  }
+
+  bool operator == (const Node_add_file_result & rhs) const
   {
+    if (!(success == rhs.success))
+      return false;
     return true;
   }
   bool operator != (const Node_add_file_result &rhs) const {
@@ -656,6 +674,10 @@ class Node_add_file_result {
 
 };
 
+typedef struct _Node_add_file_presult__isset {
+  _Node_add_file_presult__isset() : success(false) {}
+  bool success;
+} _Node_add_file_presult__isset;
 
 class Node_add_file_presult {
  public:
@@ -663,51 +685,46 @@ class Node_add_file_presult {
 
   virtual ~Node_add_file_presult() throw() {}
 
+  int32_t* success;
+
+  _Node_add_file_presult__isset __isset;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
 
 };
 
-typedef struct _Node_store_file_args__isset {
-  _Node_store_file_args__isset() : key_id(false), s(false) {}
+typedef struct _Node_del_file_args__isset {
+  _Node_del_file_args__isset() : key_id(false) {}
   bool key_id;
-  bool s;
-} _Node_store_file_args__isset;
+} _Node_del_file_args__isset;
 
-class Node_store_file_args {
+class Node_del_file_args {
  public:
 
-  Node_store_file_args() : key_id(0), s("") {
+  Node_del_file_args() : key_id(0) {
   }
 
-  virtual ~Node_store_file_args() throw() {}
+  virtual ~Node_del_file_args() throw() {}
 
   int32_t key_id;
-  std::string s;
 
-  _Node_store_file_args__isset __isset;
+  _Node_del_file_args__isset __isset;
 
   void __set_key_id(const int32_t val) {
     key_id = val;
   }
 
-  void __set_s(const std::string& val) {
-    s = val;
-  }
-
-  bool operator == (const Node_store_file_args & rhs) const
+  bool operator == (const Node_del_file_args & rhs) const
   {
     if (!(key_id == rhs.key_id))
       return false;
-    if (!(s == rhs.s))
-      return false;
     return true;
   }
-  bool operator != (const Node_store_file_args &rhs) const {
+  bool operator != (const Node_del_file_args &rhs) const {
     return !(*this == rhs);
   }
 
-  bool operator < (const Node_store_file_args & ) const;
+  bool operator < (const Node_del_file_args & ) const;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
@@ -715,71 +732,178 @@ class Node_store_file_args {
 };
 
 
-class Node_store_file_pargs {
+class Node_del_file_pargs {
  public:
 
 
-  virtual ~Node_store_file_pargs() throw() {}
+  virtual ~Node_del_file_pargs() throw() {}
 
   const int32_t* key_id;
-  const std::string* s;
 
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
 };
 
-typedef struct _Node_store_file_result__isset {
-  _Node_store_file_result__isset() : success(false) {}
+typedef struct _Node_del_file_result__isset {
+  _Node_del_file_result__isset() : success(false) {}
   bool success;
-} _Node_store_file_result__isset;
+} _Node_del_file_result__isset;
 
-class Node_store_file_result {
+class Node_del_file_result {
  public:
 
-  Node_store_file_result() : success(0) {
+  Node_del_file_result() : success(0) {
   }
 
-  virtual ~Node_store_file_result() throw() {}
+  virtual ~Node_del_file_result() throw() {}
 
   int32_t success;
 
-  _Node_store_file_result__isset __isset;
+  _Node_del_file_result__isset __isset;
 
   void __set_success(const int32_t val) {
     success = val;
   }
 
-  bool operator == (const Node_store_file_result & rhs) const
+  bool operator == (const Node_del_file_result & rhs) const
   {
     if (!(success == rhs.success))
       return false;
     return true;
   }
-  bool operator != (const Node_store_file_result &rhs) const {
+  bool operator != (const Node_del_file_result &rhs) const {
     return !(*this == rhs);
   }
 
-  bool operator < (const Node_store_file_result & ) const;
+  bool operator < (const Node_del_file_result & ) const;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
 };
 
-typedef struct _Node_store_file_presult__isset {
-  _Node_store_file_presult__isset() : success(false) {}
+typedef struct _Node_del_file_presult__isset {
+  _Node_del_file_presult__isset() : success(false) {}
   bool success;
-} _Node_store_file_presult__isset;
+} _Node_del_file_presult__isset;
 
-class Node_store_file_presult {
+class Node_del_file_presult {
  public:
 
 
-  virtual ~Node_store_file_presult() throw() {}
+  virtual ~Node_del_file_presult() throw() {}
 
   int32_t* success;
 
-  _Node_store_file_presult__isset __isset;
+  _Node_del_file_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
+typedef struct _Node_get_file_args__isset {
+  _Node_get_file_args__isset() : key_id(false) {}
+  bool key_id;
+} _Node_get_file_args__isset;
+
+class Node_get_file_args {
+ public:
+
+  Node_get_file_args() : key_id(0) {
+  }
+
+  virtual ~Node_get_file_args() throw() {}
+
+  int32_t key_id;
+
+  _Node_get_file_args__isset __isset;
+
+  void __set_key_id(const int32_t val) {
+    key_id = val;
+  }
+
+  bool operator == (const Node_get_file_args & rhs) const
+  {
+    if (!(key_id == rhs.key_id))
+      return false;
+    return true;
+  }
+  bool operator != (const Node_get_file_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_get_file_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class Node_get_file_pargs {
+ public:
+
+
+  virtual ~Node_get_file_pargs() throw() {}
+
+  const int32_t* key_id;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _Node_get_file_result__isset {
+  _Node_get_file_result__isset() : success(false) {}
+  bool success;
+} _Node_get_file_result__isset;
+
+class Node_get_file_result {
+ public:
+
+  Node_get_file_result() {
+  }
+
+  virtual ~Node_get_file_result() throw() {}
+
+  file_data success;
+
+  _Node_get_file_result__isset __isset;
+
+  void __set_success(const file_data& val) {
+    success = val;
+  }
+
+  bool operator == (const Node_get_file_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const Node_get_file_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_get_file_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _Node_get_file_presult__isset {
+  _Node_get_file_presult__isset() : success(false) {}
+  bool success;
+} _Node_get_file_presult__isset;
+
+class Node_get_file_presult {
+ public:
+
+
+  virtual ~Node_get_file_presult() throw() {}
+
+  file_data* success;
+
+  _Node_get_file_presult__isset __isset;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
 
@@ -849,11 +973,11 @@ class Node_get_table_result {
 
   virtual ~Node_get_table_result() throw() {}
 
-  std::vector<finger_entry>  success;
+  node_table success;
 
   _Node_get_table_result__isset __isset;
 
-  void __set_success(const std::vector<finger_entry> & val) {
+  void __set_success(const node_table& val) {
     success = val;
   }
 
@@ -885,7 +1009,7 @@ class Node_get_table_presult {
 
   virtual ~Node_get_table_presult() throw() {}
 
-  std::vector<finger_entry> * success;
+  node_table* success;
 
   _Node_get_table_presult__isset __isset;
 
@@ -928,15 +1052,18 @@ class NodeClient : virtual public NodeIf {
   void notify(const finger_entry& n);
   void send_notify(const finger_entry& n);
   void recv_notify();
-  void add_file(const int32_t key_id, const std::string& s);
+  int32_t add_file(const int32_t key_id, const std::string& s);
   void send_add_file(const int32_t key_id, const std::string& s);
-  void recv_add_file();
-  int32_t store_file(const int32_t key_id, const std::string& s);
-  void send_store_file(const int32_t key_id, const std::string& s);
-  int32_t recv_store_file();
-  void get_table(std::vector<finger_entry> & _return, const int32_t id);
+  int32_t recv_add_file();
+  int32_t del_file(const int32_t key_id);
+  void send_del_file(const int32_t key_id);
+  int32_t recv_del_file();
+  void get_file(file_data& _return, const int32_t key_id);
+  void send_get_file(const int32_t key_id);
+  void recv_get_file(file_data& _return);
+  void get_table(node_table& _return, const int32_t id);
   void send_get_table(const int32_t id);
-  void recv_get_table(std::vector<finger_entry> & _return);
+  void recv_get_table(node_table& _return);
  protected:
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
@@ -956,7 +1083,8 @@ class NodeProcessor : public ::apache::thrift::TProcessor {
   void process_get_predecessor(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_notify(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_add_file(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
-  void process_store_file(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_del_file(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_get_file(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_get_table(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
   NodeProcessor(boost::shared_ptr<NodeIf> iface) :
@@ -967,7 +1095,8 @@ class NodeProcessor : public ::apache::thrift::TProcessor {
     processMap_["get_predecessor"] = &NodeProcessor::process_get_predecessor;
     processMap_["notify"] = &NodeProcessor::process_notify;
     processMap_["add_file"] = &NodeProcessor::process_add_file;
-    processMap_["store_file"] = &NodeProcessor::process_store_file;
+    processMap_["del_file"] = &NodeProcessor::process_del_file;
+    processMap_["get_file"] = &NodeProcessor::process_get_file;
     processMap_["get_table"] = &NodeProcessor::process_get_table;
   }
 
@@ -1053,25 +1182,41 @@ class NodeMultiface : virtual public NodeIf {
     }
   }
 
-  void add_file(const int32_t key_id, const std::string& s) {
-    size_t sz = ifaces_.size();
-    for (size_t i = 0; i < sz; ++i) {
-      ifaces_[i]->add_file(key_id, s);
-    }
-  }
-
-  int32_t store_file(const int32_t key_id, const std::string& s) {
+  int32_t add_file(const int32_t key_id, const std::string& s) {
     size_t sz = ifaces_.size();
     for (size_t i = 0; i < sz; ++i) {
       if (i == sz - 1) {
-        return ifaces_[i]->store_file(key_id, s);
+        return ifaces_[i]->add_file(key_id, s);
       } else {
-        ifaces_[i]->store_file(key_id, s);
+        ifaces_[i]->add_file(key_id, s);
       }
     }
   }
 
-  void get_table(std::vector<finger_entry> & _return, const int32_t id) {
+  int32_t del_file(const int32_t key_id) {
+    size_t sz = ifaces_.size();
+    for (size_t i = 0; i < sz; ++i) {
+      if (i == sz - 1) {
+        return ifaces_[i]->del_file(key_id);
+      } else {
+        ifaces_[i]->del_file(key_id);
+      }
+    }
+  }
+
+  void get_file(file_data& _return, const int32_t key_id) {
+    size_t sz = ifaces_.size();
+    for (size_t i = 0; i < sz; ++i) {
+      if (i == sz - 1) {
+        ifaces_[i]->get_file(_return, key_id);
+        return;
+      } else {
+        ifaces_[i]->get_file(_return, key_id);
+      }
+    }
+  }
+
+  void get_table(node_table& _return, const int32_t id) {
     size_t sz = ifaces_.size();
     for (size_t i = 0; i < sz; ++i) {
       if (i == sz - 1) {

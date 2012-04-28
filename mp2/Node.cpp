@@ -845,6 +845,14 @@ uint32_t Node_add_file_result::read(::apache::thrift::protocol::TProtocol* iprot
     }
     switch (fid)
     {
+      case 0:
+        if (ftype == ::apache::thrift::protocol::T_I32) {
+          xfer += iprot->readI32(this->success);
+          this->__isset.success = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -863,6 +871,11 @@ uint32_t Node_add_file_result::write(::apache::thrift::protocol::TProtocol* opro
 
   xfer += oprot->writeStructBegin("Node_add_file_result");
 
+  if (this->__isset.success) {
+    xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_I32, 0);
+    xfer += oprot->writeI32(this->success);
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -888,6 +901,14 @@ uint32_t Node_add_file_presult::read(::apache::thrift::protocol::TProtocol* ipro
     }
     switch (fid)
     {
+      case 0:
+        if (ftype == ::apache::thrift::protocol::T_I32) {
+          xfer += iprot->readI32((*(this->success)));
+          this->__isset.success = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -900,7 +921,7 @@ uint32_t Node_add_file_presult::read(::apache::thrift::protocol::TProtocol* ipro
   return xfer;
 }
 
-uint32_t Node_store_file_args::read(::apache::thrift::protocol::TProtocol* iprot) {
+uint32_t Node_del_file_args::read(::apache::thrift::protocol::TProtocol* iprot) {
 
   uint32_t xfer = 0;
   std::string fname;
@@ -928,14 +949,6 @@ uint32_t Node_store_file_args::read(::apache::thrift::protocol::TProtocol* iprot
           xfer += iprot->skip(ftype);
         }
         break;
-      case 2:
-        if (ftype == ::apache::thrift::protocol::T_STRING) {
-          xfer += iprot->readString(this->s);
-          this->__isset.s = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -948,35 +961,29 @@ uint32_t Node_store_file_args::read(::apache::thrift::protocol::TProtocol* iprot
   return xfer;
 }
 
-uint32_t Node_store_file_args::write(::apache::thrift::protocol::TProtocol* oprot) const {
+uint32_t Node_del_file_args::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  xfer += oprot->writeStructBegin("Node_store_file_args");
+  xfer += oprot->writeStructBegin("Node_del_file_args");
   xfer += oprot->writeFieldBegin("key_id", ::apache::thrift::protocol::T_I32, 1);
   xfer += oprot->writeI32(this->key_id);
   xfer += oprot->writeFieldEnd();
-  xfer += oprot->writeFieldBegin("s", ::apache::thrift::protocol::T_STRING, 2);
-  xfer += oprot->writeString(this->s);
-  xfer += oprot->writeFieldEnd();
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
 }
 
-uint32_t Node_store_file_pargs::write(::apache::thrift::protocol::TProtocol* oprot) const {
+uint32_t Node_del_file_pargs::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  xfer += oprot->writeStructBegin("Node_store_file_pargs");
+  xfer += oprot->writeStructBegin("Node_del_file_pargs");
   xfer += oprot->writeFieldBegin("key_id", ::apache::thrift::protocol::T_I32, 1);
   xfer += oprot->writeI32((*(this->key_id)));
   xfer += oprot->writeFieldEnd();
-  xfer += oprot->writeFieldBegin("s", ::apache::thrift::protocol::T_STRING, 2);
-  xfer += oprot->writeString((*(this->s)));
-  xfer += oprot->writeFieldEnd();
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
 }
 
-uint32_t Node_store_file_result::read(::apache::thrift::protocol::TProtocol* iprot) {
+uint32_t Node_del_file_result::read(::apache::thrift::protocol::TProtocol* iprot) {
 
   uint32_t xfer = 0;
   std::string fname;
@@ -1016,11 +1023,11 @@ uint32_t Node_store_file_result::read(::apache::thrift::protocol::TProtocol* ipr
   return xfer;
 }
 
-uint32_t Node_store_file_result::write(::apache::thrift::protocol::TProtocol* oprot) const {
+uint32_t Node_del_file_result::write(::apache::thrift::protocol::TProtocol* oprot) const {
 
   uint32_t xfer = 0;
 
-  xfer += oprot->writeStructBegin("Node_store_file_result");
+  xfer += oprot->writeStructBegin("Node_del_file_result");
 
   if (this->__isset.success) {
     xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_I32, 0);
@@ -1032,7 +1039,7 @@ uint32_t Node_store_file_result::write(::apache::thrift::protocol::TProtocol* op
   return xfer;
 }
 
-uint32_t Node_store_file_presult::read(::apache::thrift::protocol::TProtocol* iprot) {
+uint32_t Node_del_file_presult::read(::apache::thrift::protocol::TProtocol* iprot) {
 
   uint32_t xfer = 0;
   std::string fname;
@@ -1055,6 +1062,164 @@ uint32_t Node_store_file_presult::read(::apache::thrift::protocol::TProtocol* ip
       case 0:
         if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32((*(this->success)));
+          this->__isset.success = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t Node_get_file_args::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_I32) {
+          xfer += iprot->readI32(this->key_id);
+          this->__isset.key_id = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t Node_get_file_args::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  xfer += oprot->writeStructBegin("Node_get_file_args");
+  xfer += oprot->writeFieldBegin("key_id", ::apache::thrift::protocol::T_I32, 1);
+  xfer += oprot->writeI32(this->key_id);
+  xfer += oprot->writeFieldEnd();
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+uint32_t Node_get_file_pargs::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  xfer += oprot->writeStructBegin("Node_get_file_pargs");
+  xfer += oprot->writeFieldBegin("key_id", ::apache::thrift::protocol::T_I32, 1);
+  xfer += oprot->writeI32((*(this->key_id)));
+  xfer += oprot->writeFieldEnd();
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+uint32_t Node_get_file_result::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 0:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->success.read(iprot);
+          this->__isset.success = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t Node_get_file_result::write(::apache::thrift::protocol::TProtocol* oprot) const {
+
+  uint32_t xfer = 0;
+
+  xfer += oprot->writeStructBegin("Node_get_file_result");
+
+  if (this->__isset.success) {
+    xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_STRUCT, 0);
+    xfer += this->success.write(oprot);
+    xfer += oprot->writeFieldEnd();
+  }
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+uint32_t Node_get_file_presult::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 0:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += (*(this->success)).read(iprot);
           this->__isset.success = true;
         } else {
           xfer += iprot->skip(ftype);
@@ -1155,20 +1320,8 @@ uint32_t Node_get_table_result::read(::apache::thrift::protocol::TProtocol* ipro
     switch (fid)
     {
       case 0:
-        if (ftype == ::apache::thrift::protocol::T_LIST) {
-          {
-            this->success.clear();
-            uint32_t _size0;
-            ::apache::thrift::protocol::TType _etype3;
-            iprot->readListBegin(_etype3, _size0);
-            this->success.resize(_size0);
-            uint32_t _i4;
-            for (_i4 = 0; _i4 < _size0; ++_i4)
-            {
-              xfer += this->success[_i4].read(iprot);
-            }
-            iprot->readListEnd();
-          }
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->success.read(iprot);
           this->__isset.success = true;
         } else {
           xfer += iprot->skip(ftype);
@@ -1193,16 +1346,8 @@ uint32_t Node_get_table_result::write(::apache::thrift::protocol::TProtocol* opr
   xfer += oprot->writeStructBegin("Node_get_table_result");
 
   if (this->__isset.success) {
-    xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_LIST, 0);
-    {
-      xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->success.size()));
-      std::vector<finger_entry> ::const_iterator _iter5;
-      for (_iter5 = this->success.begin(); _iter5 != this->success.end(); ++_iter5)
-      {
-        xfer += (*_iter5).write(oprot);
-      }
-      xfer += oprot->writeListEnd();
-    }
+    xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_STRUCT, 0);
+    xfer += this->success.write(oprot);
     xfer += oprot->writeFieldEnd();
   }
   xfer += oprot->writeFieldStop();
@@ -1231,20 +1376,8 @@ uint32_t Node_get_table_presult::read(::apache::thrift::protocol::TProtocol* ipr
     switch (fid)
     {
       case 0:
-        if (ftype == ::apache::thrift::protocol::T_LIST) {
-          {
-            (*(this->success)).clear();
-            uint32_t _size6;
-            ::apache::thrift::protocol::TType _etype9;
-            iprot->readListBegin(_etype9, _size6);
-            (*(this->success)).resize(_size6);
-            uint32_t _i10;
-            for (_i10 = 0; _i10 < _size6; ++_i10)
-            {
-              xfer += (*(this->success))[_i10].read(iprot);
-            }
-            iprot->readListEnd();
-          }
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += (*(this->success)).read(iprot);
           this->__isset.success = true;
         } else {
           xfer += iprot->skip(ftype);
@@ -1545,10 +1678,10 @@ void NodeClient::recv_notify()
   return;
 }
 
-void NodeClient::add_file(const int32_t key_id, const std::string& s)
+int32_t NodeClient::add_file(const int32_t key_id, const std::string& s)
 {
   send_add_file(key_id, s);
-  recv_add_file();
+  return recv_add_file();
 }
 
 void NodeClient::send_add_file(const int32_t key_id, const std::string& s)
@@ -1566,7 +1699,7 @@ void NodeClient::send_add_file(const int32_t key_id, const std::string& s)
   oprot_->getTransport()->flush();
 }
 
-void NodeClient::recv_add_file()
+int32_t NodeClient::recv_add_file()
 {
 
   int32_t rseqid = 0;
@@ -1591,28 +1724,32 @@ void NodeClient::recv_add_file()
     iprot_->readMessageEnd();
     iprot_->getTransport()->readEnd();
   }
+  int32_t _return;
   Node_add_file_presult result;
+  result.success = &_return;
   result.read(iprot_);
   iprot_->readMessageEnd();
   iprot_->getTransport()->readEnd();
 
-  return;
+  if (result.__isset.success) {
+    return _return;
+  }
+  throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "add_file failed: unknown result");
 }
 
-int32_t NodeClient::store_file(const int32_t key_id, const std::string& s)
+int32_t NodeClient::del_file(const int32_t key_id)
 {
-  send_store_file(key_id, s);
-  return recv_store_file();
+  send_del_file(key_id);
+  return recv_del_file();
 }
 
-void NodeClient::send_store_file(const int32_t key_id, const std::string& s)
+void NodeClient::send_del_file(const int32_t key_id)
 {
   int32_t cseqid = 0;
-  oprot_->writeMessageBegin("store_file", ::apache::thrift::protocol::T_CALL, cseqid);
+  oprot_->writeMessageBegin("del_file", ::apache::thrift::protocol::T_CALL, cseqid);
 
-  Node_store_file_pargs args;
+  Node_del_file_pargs args;
   args.key_id = &key_id;
-  args.s = &s;
   args.write(oprot_);
 
   oprot_->writeMessageEnd();
@@ -1620,7 +1757,7 @@ void NodeClient::send_store_file(const int32_t key_id, const std::string& s)
   oprot_->getTransport()->flush();
 }
 
-int32_t NodeClient::recv_store_file()
+int32_t NodeClient::recv_del_file()
 {
 
   int32_t rseqid = 0;
@@ -1640,13 +1777,13 @@ int32_t NodeClient::recv_store_file()
     iprot_->readMessageEnd();
     iprot_->getTransport()->readEnd();
   }
-  if (fname.compare("store_file") != 0) {
+  if (fname.compare("del_file") != 0) {
     iprot_->skip(::apache::thrift::protocol::T_STRUCT);
     iprot_->readMessageEnd();
     iprot_->getTransport()->readEnd();
   }
   int32_t _return;
-  Node_store_file_presult result;
+  Node_del_file_presult result;
   result.success = &_return;
   result.read(iprot_);
   iprot_->readMessageEnd();
@@ -1655,10 +1792,68 @@ int32_t NodeClient::recv_store_file()
   if (result.__isset.success) {
     return _return;
   }
-  throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "store_file failed: unknown result");
+  throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "del_file failed: unknown result");
 }
 
-void NodeClient::get_table(std::vector<finger_entry> & _return, const int32_t id)
+void NodeClient::get_file(file_data& _return, const int32_t key_id)
+{
+  send_get_file(key_id);
+  recv_get_file(_return);
+}
+
+void NodeClient::send_get_file(const int32_t key_id)
+{
+  int32_t cseqid = 0;
+  oprot_->writeMessageBegin("get_file", ::apache::thrift::protocol::T_CALL, cseqid);
+
+  Node_get_file_pargs args;
+  args.key_id = &key_id;
+  args.write(oprot_);
+
+  oprot_->writeMessageEnd();
+  oprot_->getTransport()->writeEnd();
+  oprot_->getTransport()->flush();
+}
+
+void NodeClient::recv_get_file(file_data& _return)
+{
+
+  int32_t rseqid = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TMessageType mtype;
+
+  iprot_->readMessageBegin(fname, mtype, rseqid);
+  if (mtype == ::apache::thrift::protocol::T_EXCEPTION) {
+    ::apache::thrift::TApplicationException x;
+    x.read(iprot_);
+    iprot_->readMessageEnd();
+    iprot_->getTransport()->readEnd();
+    throw x;
+  }
+  if (mtype != ::apache::thrift::protocol::T_REPLY) {
+    iprot_->skip(::apache::thrift::protocol::T_STRUCT);
+    iprot_->readMessageEnd();
+    iprot_->getTransport()->readEnd();
+  }
+  if (fname.compare("get_file") != 0) {
+    iprot_->skip(::apache::thrift::protocol::T_STRUCT);
+    iprot_->readMessageEnd();
+    iprot_->getTransport()->readEnd();
+  }
+  Node_get_file_presult result;
+  result.success = &_return;
+  result.read(iprot_);
+  iprot_->readMessageEnd();
+  iprot_->getTransport()->readEnd();
+
+  if (result.__isset.success) {
+    // _return pointer has now been filled
+    return;
+  }
+  throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "get_file failed: unknown result");
+}
+
+void NodeClient::get_table(node_table& _return, const int32_t id)
 {
   send_get_table(id);
   recv_get_table(_return);
@@ -1678,7 +1873,7 @@ void NodeClient::send_get_table(const int32_t id)
   oprot_->getTransport()->flush();
 }
 
-void NodeClient::recv_get_table(std::vector<finger_entry> & _return)
+void NodeClient::recv_get_table(node_table& _return)
 {
 
   int32_t rseqid = 0;
@@ -2053,7 +2248,8 @@ void NodeProcessor::process_add_file(int32_t seqid, ::apache::thrift::protocol::
 
   Node_add_file_result result;
   try {
-    iface_->add_file(args.key_id, args.s);
+    result.success = iface_->add_file(args.key_id, args.s);
+    result.__isset.success = true;
   } catch (const std::exception& e) {
     if (this->eventHandler_.get() != NULL) {
       this->eventHandler_->handlerError(ctx, "Node.add_file");
@@ -2083,38 +2279,38 @@ void NodeProcessor::process_add_file(int32_t seqid, ::apache::thrift::protocol::
   }
 }
 
-void NodeProcessor::process_store_file(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
+void NodeProcessor::process_del_file(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
 {
   void* ctx = NULL;
   if (this->eventHandler_.get() != NULL) {
-    ctx = this->eventHandler_->getContext("Node.store_file", callContext);
+    ctx = this->eventHandler_->getContext("Node.del_file", callContext);
   }
-  apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "Node.store_file");
+  apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "Node.del_file");
 
   if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->preRead(ctx, "Node.store_file");
+    this->eventHandler_->preRead(ctx, "Node.del_file");
   }
 
-  Node_store_file_args args;
+  Node_del_file_args args;
   args.read(iprot);
   iprot->readMessageEnd();
   uint32_t bytes = iprot->getTransport()->readEnd();
 
   if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->postRead(ctx, "Node.store_file", bytes);
+    this->eventHandler_->postRead(ctx, "Node.del_file", bytes);
   }
 
-  Node_store_file_result result;
+  Node_del_file_result result;
   try {
-    result.success = iface_->store_file(args.key_id, args.s);
+    result.success = iface_->del_file(args.key_id);
     result.__isset.success = true;
   } catch (const std::exception& e) {
     if (this->eventHandler_.get() != NULL) {
-      this->eventHandler_->handlerError(ctx, "Node.store_file");
+      this->eventHandler_->handlerError(ctx, "Node.del_file");
     }
 
     apache::thrift::TApplicationException x(e.what());
-    oprot->writeMessageBegin("store_file", apache::thrift::protocol::T_EXCEPTION, seqid);
+    oprot->writeMessageBegin("del_file", apache::thrift::protocol::T_EXCEPTION, seqid);
     x.write(oprot);
     oprot->writeMessageEnd();
     oprot->getTransport()->writeEnd();
@@ -2123,17 +2319,71 @@ void NodeProcessor::process_store_file(int32_t seqid, ::apache::thrift::protocol
   }
 
   if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->preWrite(ctx, "Node.store_file");
+    this->eventHandler_->preWrite(ctx, "Node.del_file");
   }
 
-  oprot->writeMessageBegin("store_file", apache::thrift::protocol::T_REPLY, seqid);
+  oprot->writeMessageBegin("del_file", apache::thrift::protocol::T_REPLY, seqid);
   result.write(oprot);
   oprot->writeMessageEnd();
   bytes = oprot->getTransport()->writeEnd();
   oprot->getTransport()->flush();
 
   if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->postWrite(ctx, "Node.store_file", bytes);
+    this->eventHandler_->postWrite(ctx, "Node.del_file", bytes);
+  }
+}
+
+void NodeProcessor::process_get_file(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
+{
+  void* ctx = NULL;
+  if (this->eventHandler_.get() != NULL) {
+    ctx = this->eventHandler_->getContext("Node.get_file", callContext);
+  }
+  apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "Node.get_file");
+
+  if (this->eventHandler_.get() != NULL) {
+    this->eventHandler_->preRead(ctx, "Node.get_file");
+  }
+
+  Node_get_file_args args;
+  args.read(iprot);
+  iprot->readMessageEnd();
+  uint32_t bytes = iprot->getTransport()->readEnd();
+
+  if (this->eventHandler_.get() != NULL) {
+    this->eventHandler_->postRead(ctx, "Node.get_file", bytes);
+  }
+
+  Node_get_file_result result;
+  try {
+    iface_->get_file(result.success, args.key_id);
+    result.__isset.success = true;
+  } catch (const std::exception& e) {
+    if (this->eventHandler_.get() != NULL) {
+      this->eventHandler_->handlerError(ctx, "Node.get_file");
+    }
+
+    apache::thrift::TApplicationException x(e.what());
+    oprot->writeMessageBegin("get_file", apache::thrift::protocol::T_EXCEPTION, seqid);
+    x.write(oprot);
+    oprot->writeMessageEnd();
+    oprot->getTransport()->writeEnd();
+    oprot->getTransport()->flush();
+    return;
+  }
+
+  if (this->eventHandler_.get() != NULL) {
+    this->eventHandler_->preWrite(ctx, "Node.get_file");
+  }
+
+  oprot->writeMessageBegin("get_file", apache::thrift::protocol::T_REPLY, seqid);
+  result.write(oprot);
+  oprot->writeMessageEnd();
+  bytes = oprot->getTransport()->writeEnd();
+  oprot->getTransport()->flush();
+
+  if (this->eventHandler_.get() != NULL) {
+    this->eventHandler_->postWrite(ctx, "Node.get_file", bytes);
   }
 }
 

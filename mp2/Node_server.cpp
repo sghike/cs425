@@ -61,7 +61,7 @@ class Node {
     int stabilizeInterval;
     int fixInterval;
     int seed;
-    map<int, string> files;
+    map<int, string> keys_table;
 
     Node(int m, int id, int port) {
       int i;
@@ -120,7 +120,7 @@ class Node {
       // printf("id = %d in find_successor_local\n", id);
       finger_entry n = find_predecessor(id);
       // printf("predecessor = %d %d \n", n.id, n.port);
-      if(n.id == this->id)
+      if (n.id == this->id)
       {
         finger_entry _return;
         _return.id = this->successor.id;
@@ -154,6 +154,7 @@ class Node {
         transport1->open();
         client1.closest_preceding_finger(n, id);
         transport1->close();
+      
         boost::shared_ptr<TSocket> socket2(new TSocket("localhost", n.port));
         boost::shared_ptr<TTransport> 
           transport2(new TBufferedTransport(socket2));
@@ -165,7 +166,6 @@ class Node {
         succ = n_successor.id;
         transport2->close();
       }
-
       return n;
     }
 
@@ -190,7 +190,7 @@ class Node {
       transport->close(); 
       this->successor = succ;
       cout << "node = <" << id << ">: initial sucessor= <" << successor.id << ">" << endl;
-      if(finger_table[0] != this->successor)
+      if (finger_table[0] != this->successor)
       {
           finger_table[0] = this->successor;    
           cout << "node= <" << id << ">: updated finger entry: i= <" << 1 << ">, pointer= <" << finger_table[0].id << ">" << endl;
@@ -212,7 +212,7 @@ class Node {
       if ((id < successor.id && (x.id > id && x.id < successor.id)) ||
           (successor.id < id && (x.id > id || x.id < successor.id))) {
         successor = x;
-        if(finger_table[0] != this->successor)
+        if (finger_table[0] != this->successor)
         {
             finger_table[0] = successor;
         cout << "node= <" << id << ">: updated finger entry: i= <" << 1 << ">, pointer= <" << finger_table[0].id << ">" << endl;
@@ -289,7 +289,7 @@ class NodeHandler : virtual public NodeIf {
     int i;
     for (i = me->m - 1; i >= 0; i--) {
       int finger_id = me->finger_table[i].id;
-      if(finger_id == -1)
+      if (finger_id == -1)
            continue;
       if ((me->id < id && (finger_id > me->id && finger_id < id)) ||
           (me->id > id && (finger_id < id || finger_id > me->id))) {
@@ -327,11 +327,12 @@ class NodeHandler : virtual public NodeIf {
     }
   }
   
-  void get_table(std::vector<finger_entry> & _return, const int32_t id) {
+  void get_table(node_table& _return, const int32_t id) {
     // Your implementation goes here
     printf("get_table\n");
     if (me->id == id) {
-      _return = me->finger_table;
+      _return.finger_table = me->finger_table;
+      _return.keys_table = me->keys_table;
       return;
     } else {
       finger_entry pred;
@@ -360,44 +361,88 @@ class NodeHandler : virtual public NodeIf {
       }
     }
   }
-
   
-  void add_file(const int32_t key_id, const std::string& s) {
+  int add_file(const int32_t key_id, const std::string& s) {
     // Your implementation goes here
     printf("add_file\n");
-    finger_entry n;
-    //call me->find_sucessor_local(key_id);
-    n = me->find_successor_local(key_id);
-    
-    //call store_file on destination
-    //use thrift
-    boost::shared_ptr<TSocket> socket(new TSocket("localhost", n.port));
-    boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
-    boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
-    NodeClient client(protocol);
-    transport->open();
-    // call rpc  
-    client.store_file(key_id, s);
-     
-    transport->close();
-
+    int ret;
+    finger_entry succ;
+    succ = me->find_successor_local(key_id);
+    if (succ.id == me->id) {
+      pair<map<int, string>::iterator, bool> check; 
+      check = me->keys_table.insert(pair<int, string>(key_id, s)); 
+      if (check.second == false) {
+        printf("file with same key exists already\n");
+        ret = -1; //failure
+       } else {
+        ret = me->id; // success
+        cout << "node= <" << me->id << ">: added file: k= <" << key_id << ">" << endl;
+      }
+    } else {
+      boost::shared_ptr<TSocket> socket(new TSocket("localhost", succ.port));
+      boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+      boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+      NodeClient client(protocol);
+      transport->open();
+      ret = client.add_file(key_id, s);
+      transport->close();
+    }
+    return ret;
   }
 
-  /* Return success or failure. */
-  int32_t store_file(const int32_t key_id, const std::string& s) {
+  int del_file(const int32_t key_id) {
     // Your implementation goes here
-    printf("store_file\n");
-    pair<map<int, string>::iterator, bool> check; 
-
-    // store (key_id, s) in me->files;
-    check = me->files.insert(pair<int, string>(key_id, s)); 
-    if(check.second == false)
-    {
-        printf("file with same key exists already");
-        return -1; //failure
+    printf("del_file\n");
+    int ret;
+    finger_entry succ;
+    succ = me->find_successor_local(key_id);
+    if (succ.id == me->id) {
+      int del = me->keys_table.erase(key_id); 
+      if (del == 0) {
+        ret = -1; //failure
+        cout << "node= <" << me->id << ">: no such file k= <" << key_id << "> to delete" << endl;
+       } else {
+        ret = me->id; // success
+        cout << "node= <" << me->id << ">: deleted file: k= <" << key_id << ">" << endl;
+      }
+    } else {
+      boost::shared_ptr<TSocket> socket(new TSocket("localhost", succ.port));
+      boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+      boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+      NodeClient client(protocol);
+      transport->open();
+      ret = client.del_file(key_id);
+      transport->close();
     }
-    else
-        return 0; // success
+    return ret;
+  }
+
+  void get_file(file_data& _return, const int32_t key_id) {
+    // Your implementation goes here
+    printf("get_file\n");
+    finger_entry succ;
+    succ = me->find_successor_local(key_id);
+    if (succ.id == me->id) {
+      map<int, string>::iterator it;
+      it = me->keys_table.find(key_id); 
+      if (it == me->keys_table.end()) { //failure
+        _return.node = -1;
+        _return.data = "";
+        cout << "node= <" << me->id << ">: no such file k= <" << key_id << "> to serve" << endl;
+       } else {
+         _return.node = me->id;
+         _return.data = me->keys_table[key_id]; // success
+         cout << "node= <" << me->id << ">: served file: k= <" << key_id << ">" << endl;
+      }
+    } else {
+      boost::shared_ptr<TSocket> socket(new TSocket("localhost", succ.port));
+      boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+      boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+      NodeClient client(protocol);
+      transport->open();
+      client.get_file(_return, key_id);
+      transport->close();
+    }
   }
 
 };
@@ -520,8 +565,6 @@ int main(int argc, char **argv) {
   if (seed != -1) {
     me->setSeed(seed);
   }
-
-
 
   shared_ptr<NodeHandler> handler(new NodeHandler());
   shared_ptr<TProcessor> processor(new NodeProcessor(handler));

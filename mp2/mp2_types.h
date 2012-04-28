@@ -65,6 +65,112 @@ class finger_entry {
 
 };
 
+typedef struct _node_table__isset {
+  _node_table__isset() : finger_table(false), keys_table(false) {}
+  bool finger_table;
+  bool keys_table;
+} _node_table__isset;
+
+class node_table {
+ public:
+
+  static const char* ascii_fingerprint; // = "322BD56365D2D0DB3F4FD04249548998";
+  static const uint8_t binary_fingerprint[16]; // = {0x32,0x2B,0xD5,0x63,0x65,0xD2,0xD0,0xDB,0x3F,0x4F,0xD0,0x42,0x49,0x54,0x89,0x98};
+
+  node_table() {
+  }
+
+  virtual ~node_table() throw() {}
+
+  std::vector<finger_entry>  finger_table;
+  std::map<int32_t, std::string>  keys_table;
+
+  _node_table__isset __isset;
+
+  void __set_finger_table(const std::vector<finger_entry> & val) {
+    finger_table = val;
+  }
+
+  void __set_keys_table(const std::map<int32_t, std::string> & val) {
+    keys_table = val;
+  }
+
+  bool operator == (const node_table & rhs) const
+  {
+    if (!(finger_table == rhs.finger_table))
+      return false;
+    if (!(keys_table == rhs.keys_table))
+      return false;
+    return true;
+  }
+  bool operator != (const node_table &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const node_table & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _file_data__isset {
+  _file_data__isset() : found(false), node(false), data(false) {}
+  bool found;
+  bool node;
+  bool data;
+} _file_data__isset;
+
+class file_data {
+ public:
+
+  static const char* ascii_fingerprint; // = "3AF079A0ABCF5F81A1FDD88ABB37237A";
+  static const uint8_t binary_fingerprint[16]; // = {0x3A,0xF0,0x79,0xA0,0xAB,0xCF,0x5F,0x81,0xA1,0xFD,0xD8,0x8A,0xBB,0x37,0x23,0x7A};
+
+  file_data() : found(0), node(0), data("") {
+  }
+
+  virtual ~file_data() throw() {}
+
+  bool found;
+  int32_t node;
+  std::string data;
+
+  _file_data__isset __isset;
+
+  void __set_found(const bool val) {
+    found = val;
+  }
+
+  void __set_node(const int32_t val) {
+    node = val;
+  }
+
+  void __set_data(const std::string& val) {
+    data = val;
+  }
+
+  bool operator == (const file_data & rhs) const
+  {
+    if (!(found == rhs.found))
+      return false;
+    if (!(node == rhs.node))
+      return false;
+    if (!(data == rhs.data))
+      return false;
+    return true;
+  }
+  bool operator != (const file_data &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const file_data & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
 } // namespace
 
 #endif
