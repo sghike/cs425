@@ -441,7 +441,6 @@ int add_file(string input, string m_val)
        cout << "listener is not connected to any node" << endl;
        return 1;
     }
-    
     boost::shared_ptr<TSocket> socket(new TSocket("localhost", port));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
@@ -582,7 +581,6 @@ int get_file(string input, string m_val)
        cout << "listener is not connected to any node" << endl;
        return 1;
     }
-    
     boost::shared_ptr<TSocket> socket(new TSocket("localhost", port));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
@@ -635,7 +633,6 @@ int get_table(string input, string m_val)
        cout << "listener is not connected to any node" << endl;
        return 1;
     }
-
     boost::shared_ptr<TSocket> socket(new TSocket("localhost", port));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
