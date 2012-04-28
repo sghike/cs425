@@ -327,7 +327,7 @@ class NodeHandler : virtual public NodeIf {
     }
   }
   
-void get_table(node_table& _return, const int32_t id) {
+  void get_table(node_table& _return, const int32_t id) {
     // Your implementation goes here
     printf("get_table\n");
     if (me->id == id) {
