@@ -352,7 +352,6 @@ class NodeHandler : virtual public NodeIf {
       if (me->predecessor != n) {
         me->predecessor = n;
         cout << "node= " << me->id << ": updated predecessor= " << n.id << endl;
-        me->moveFilesToPred();
       }
     }
     if (me->predecessor.id != -1) {
