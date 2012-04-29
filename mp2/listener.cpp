@@ -1,3 +1,4 @@
+#include "Node.h"
 #include <unistd.h>
 #include <assert.h>
 #include <stdint.h>
@@ -28,7 +29,6 @@
 #endif
 #include "sha1.h"
 #include <fcntl.h>
-#include "Node.h"
 
 using namespace std;
 using namespace ::apache::thrift;
@@ -393,7 +393,8 @@ int add_file(string input, string m_val)
     int m;
     SHA1Context sha;
     FILE *fp;
-    int key_id;
+    int32_t key_id;
+    _FILE file;
 
     // change m_val into an integer
     m = atoi(m_val.c_str()); 
@@ -411,6 +412,8 @@ int add_file(string input, string m_val)
     cout << "filename is : " << filename << endl;
     cout << "file data is : " << data << endl;
     
+    file.name = filename;
+    file.data = data;
     // create sha-1 key
     SHA1Reset(&sha);
     SHA1Input(&sha, (unsigned char*)filename.c_str(), filename.size());
@@ -445,7 +448,7 @@ int add_file(string input, string m_val)
     NodeClient client(protocol);
     transport->open();
     // call rpc function
-    int id  = client.add_file(key_id, data);
+    int id  = client.add_file(key_id, file);
     if(id > -1)
     {
         get_ADD_FILE_result_as_string(filename.c_str(), key_id, id);
@@ -642,11 +645,11 @@ int get_table(string input, string m_val)
     client.get_table(table, atoi(id_num));
       transport->close(); 
      
-    if(table.node == -1)
+    if(table.finger_table.size() == 0)
        cout << "requested node" << id_num << "does not exist" << endl;
     else
     {
-       cout << get_GET_TABLE_result_as_string(table.finger_table, m, table.node, 0, table.keys_table, fname);
+       cout << get_GET_TABLE_result_as_string(table.finger_table, m, atoi(id_num), 0, table.keys_table);
     }   
     return 0;
 }
@@ -795,12 +798,12 @@ string get_GET_TABLE_result_as_string(
         const uint32_t m,
         const uint32_t id,
         const uint32_t idx_of_entry1,
-        const map<int32_t, string>& keys_table, string fname)
+        const map<int32_t, _FILE>& keys_table)
     {
         return get_finger_table_as_string(
             finger_table, m, id, idx_of_entry1) \
             + \
-            get_keys_table_as_string(keys_table, fname);
+            get_keys_table_as_string(keys_table);
     }
 
 
@@ -814,7 +817,7 @@ get_finger_table_as_string(const vector<finger_entry>& table,
     assert(table.size() == (idx_of_entry1 + m));
     s << "finger table:\n";
     for (size_t i = 1; (i - 1 + idx_of_entry1) < table.size(); ++i) {
-        using setw;
+        using std::setw;
         s << "entry: i= " << setw(2) << i << ", interval=["
           << setw(4) << (id + (int)pow(2, i-1)) % ((int)pow(2, m))
           << ",   "
@@ -827,20 +830,20 @@ get_finger_table_as_string(const vector<finger_entry>& table,
 }
 
 string
-get_keys_table_as_string(const map<int32_t, string>& table, const string fname)
+get_keys_table_as_string(const map<int32_t, _FILE>& table)
 {
     stringstream s;
-    map<int32_t, string>::const_iterator it = table.begin();
+    map<int32_t, _FILE>::const_iterator it = table.begin();
     /* map keeps the keys sorted, so our iteration will be in
  *      * ascending order of the keys
  *           */
     s << "keys table:\n";
     for (; it != table.end(); ++it) {
-        using setw;
+        using std::setw;
         /* assuming file names are <= 10 chars long */
         s << "entry: k= " << setw(4) << it->first
-          << ",  fname= " << setw(10) << fname
-          << ",  fdata= " << it->second
+          << ",  fname= " << setw(10) << it->second.name
+          << ",  fdata= " << it->second.data
           << "\n";
     }
     return s.str();
