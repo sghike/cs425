@@ -329,6 +329,23 @@ class NodeHandler : virtual public NodeIf {
       if (me->predecessor != n) {
         me->predecessor = n;
         cout << "node= " << me->id << ": updated predecessor= " << n.id << endl;
+        map<int, _FILE> offload;
+        map<int, _FILE>::iterator it;
+        for (it = me->keys_table.begin(); it != me->keys_table.end(); it++) {
+          if (it->first <= me->predecessor.id) {
+            offload.insert(*it);
+          }
+        }
+        boost::shared_ptr<TSocket> socket(new TSocket("localhost", me->predecessor.port));
+        boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+        boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+        NodeClient client(protocol);
+        transport->open();
+        bool ret = client.accept_files(offload);
+        transport->close();
+        if (!ret) {
+          cout << "Transfer of files between nodes " << me->id << " and " << me->predecessor.id << " failed." << endl;
+        }
       }
     }
   }
@@ -449,6 +466,13 @@ class NodeHandler : virtual public NodeIf {
       client.get_file(_return, key_id);
       transport->close();
     }
+  }
+  
+  bool accept_files(const std::map<int32_t, _FILE> & offload) {
+    // Your implementation goes here
+    printf("accept_files\n");
+    me->keys_table = offload;
+    return true;
   }
 
 };

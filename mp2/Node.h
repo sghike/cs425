@@ -24,6 +24,7 @@ class NodeIf {
   virtual int32_t del_file(const int32_t key_id) = 0;
   virtual void get_file(file_data& _return, const int32_t key_id) = 0;
   virtual void get_table(node_table& _return, const int32_t id) = 0;
+  virtual bool accept_files(const std::map<int32_t, _FILE> & offload) = 0;
 };
 
 class NodeIfFactory {
@@ -81,6 +82,10 @@ class NodeNull : virtual public NodeIf {
   }
   void get_table(node_table& /* _return */, const int32_t /* id */) {
     return;
+  }
+  bool accept_files(const std::map<int32_t, _FILE> & /* offload */) {
+    bool _return = false;
+    return _return;
   }
 };
 
@@ -1017,6 +1022,114 @@ class Node_get_table_presult {
 
 };
 
+typedef struct _Node_accept_files_args__isset {
+  _Node_accept_files_args__isset() : offload(false) {}
+  bool offload;
+} _Node_accept_files_args__isset;
+
+class Node_accept_files_args {
+ public:
+
+  Node_accept_files_args() {
+  }
+
+  virtual ~Node_accept_files_args() throw() {}
+
+  std::map<int32_t, _FILE>  offload;
+
+  _Node_accept_files_args__isset __isset;
+
+  void __set_offload(const std::map<int32_t, _FILE> & val) {
+    offload = val;
+  }
+
+  bool operator == (const Node_accept_files_args & rhs) const
+  {
+    if (!(offload == rhs.offload))
+      return false;
+    return true;
+  }
+  bool operator != (const Node_accept_files_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_accept_files_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class Node_accept_files_pargs {
+ public:
+
+
+  virtual ~Node_accept_files_pargs() throw() {}
+
+  const std::map<int32_t, _FILE> * offload;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _Node_accept_files_result__isset {
+  _Node_accept_files_result__isset() : success(false) {}
+  bool success;
+} _Node_accept_files_result__isset;
+
+class Node_accept_files_result {
+ public:
+
+  Node_accept_files_result() : success(0) {
+  }
+
+  virtual ~Node_accept_files_result() throw() {}
+
+  bool success;
+
+  _Node_accept_files_result__isset __isset;
+
+  void __set_success(const bool val) {
+    success = val;
+  }
+
+  bool operator == (const Node_accept_files_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const Node_accept_files_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Node_accept_files_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _Node_accept_files_presult__isset {
+  _Node_accept_files_presult__isset() : success(false) {}
+  bool success;
+} _Node_accept_files_presult__isset;
+
+class Node_accept_files_presult {
+ public:
+
+
+  virtual ~Node_accept_files_presult() throw() {}
+
+  bool* success;
+
+  _Node_accept_files_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
 class NodeClient : virtual public NodeIf {
  public:
   NodeClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
@@ -1064,6 +1177,9 @@ class NodeClient : virtual public NodeIf {
   void get_table(node_table& _return, const int32_t id);
   void send_get_table(const int32_t id);
   void recv_get_table(node_table& _return);
+  bool accept_files(const std::map<int32_t, _FILE> & offload);
+  void send_accept_files(const std::map<int32_t, _FILE> & offload);
+  bool recv_accept_files();
  protected:
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
@@ -1086,6 +1202,7 @@ class NodeProcessor : public ::apache::thrift::TProcessor {
   void process_del_file(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_get_file(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_get_table(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_accept_files(int32_t seqid, apache::thrift::protocol::TProtocol* iprot, apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
   NodeProcessor(boost::shared_ptr<NodeIf> iface) :
     iface_(iface) {
@@ -1098,6 +1215,7 @@ class NodeProcessor : public ::apache::thrift::TProcessor {
     processMap_["del_file"] = &NodeProcessor::process_del_file;
     processMap_["get_file"] = &NodeProcessor::process_get_file;
     processMap_["get_table"] = &NodeProcessor::process_get_table;
+    processMap_["accept_files"] = &NodeProcessor::process_accept_files;
   }
 
   virtual bool process(boost::shared_ptr<apache::thrift::protocol::TProtocol> piprot, boost::shared_ptr<apache::thrift::protocol::TProtocol> poprot, void* callContext);
@@ -1224,6 +1342,17 @@ class NodeMultiface : virtual public NodeIf {
         return;
       } else {
         ifaces_[i]->get_table(_return, id);
+      }
+    }
+  }
+
+  bool accept_files(const std::map<int32_t, _FILE> & offload) {
+    size_t sz = ifaces_.size();
+    for (size_t i = 0; i < sz; ++i) {
+      if (i == sz - 1) {
+        return ifaces_[i]->accept_files(offload);
+      } else {
+        ifaces_[i]->accept_files(offload);
       }
     }
   }

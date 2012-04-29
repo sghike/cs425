@@ -67,6 +67,11 @@ class NodeHandler : virtual public NodeIf {
     printf("get_table\n");
   }
 
+  bool accept_files(const std::map<int32_t, _FILE> & offload) {
+    // Your implementation goes here
+    printf("accept_files\n");
+  }
+
 };
 
 int main(int argc, char **argv) {

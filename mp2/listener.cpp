@@ -520,7 +520,8 @@ int del_file(string input, string m_val)
     // call rpc function
     int id  = client.del_file(key_id);
     string output;
-    output = get_DEL_FILE_result_as_string(filename.c_str(), key_id, id);
+    bool check = (id != -1);
+    output = get_DEL_FILE_result_as_string(filename.c_str(), key_id, check, id);
     cout << output;
     transport->close(); 
      
