@@ -448,9 +448,11 @@ int add_file(string input, string m_val)
     transport->open();
     // call rpc function
     int32_t id  = client.add_file(key_id, file);
+    string output;
     if(id > -1)
     {
-        get_ADD_FILE_result_as_string(filename.c_str(), key_id, id);
+        output = get_ADD_FILE_result_as_string(filename.c_str(), key_id, id);
+        cout << output;
     } 
     else 
        cout << "error in adding file" << endl;
@@ -517,12 +519,9 @@ int del_file(string input, string m_val)
     transport->open();
     // call rpc function
     int id  = client.del_file(key_id);
-    if(id > -1)
-    {
-        get_ADD_FILE_result_as_string(filename.c_str(), key_id, id);
-    } 
-    else 
-       cout << "error in adding file" << endl;
+    string output;
+    output = get_DEL_FILE_result_as_string(filename.c_str(), key_id, id);
+    cout << output;
     transport->close(); 
      
     return 0;
@@ -590,7 +589,9 @@ int get_file(string input, string m_val)
     //call rpc function
     client.get_file(data, key_id);
     bool found = (data.node != -1);
-    get_GET_FILE_result_as_string(filename.c_str(), key_id, found, data.node, data.file.data.c_str());
+    string output;
+    output = get_GET_FILE_result_as_string(filename.c_str(), key_id, found, data.node, data.file.data.c_str());
+    cout << output;
     transport->close(); 
      
     return 0;
@@ -642,12 +643,7 @@ int get_table(string input, string m_val)
     client.get_table(table, atoi(id_num));
       transport->close(); 
      
-    if(table.finger_table.size() == 0)
-       cout << "requested node" << id_num << "does not exist" << endl;
-    else
-    {
-       cout << get_GET_TABLE_result_as_string(table.finger_table, m, atoi(id_num), 0, table.keys_table);
-    }   
+    cout << get_GET_TABLE_result_as_string(table.finger_table, m, atoi(id_num), 0, table.keys_table);
     return 0;
 }
 

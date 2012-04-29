@@ -119,7 +119,7 @@ class Node {
     finger_entry find_successor_local(int id) {
       // printf("id = %d in find_successor_local\n", id);
       finger_entry n = find_predecessor(id);
-      // printf("predecessor = %d %d \n", n.id, n.port);
+      //printf("predecessor = %d id = %d \n", n.id, id);
       if (n.id == this->id)
       {
         finger_entry _return;
@@ -145,6 +145,11 @@ class Node {
       n.id = this->id;
       n.port = this->port;
       int succ = successor.id;
+    //  printf("n.id is %d and succ.id is %d and id is %d\n", n.id, succ, id);
+      if(id == this->id)
+      {
+          return this->predecessor;
+      }
       while ((succ != n.id) && !((succ > n.id && (id > n.id && id <= succ)) || 
              (n.id > succ && (id > n.id || id <= succ)))) {
         boost::shared_ptr<TSocket> socket1(new TSocket("localhost", n.port));
@@ -154,7 +159,7 @@ class Node {
         transport1->open();
         client1.closest_preceding_finger(n, id);
         transport1->close();
-      
+        
         boost::shared_ptr<TSocket> socket2(new TSocket("localhost", n.port));
         boost::shared_ptr<TTransport> 
           transport2(new TBufferedTransport(socket2));
@@ -166,6 +171,7 @@ class Node {
         succ = n_successor.id;
         transport2->close();
       }
+      //printf("after while loop id = %d\n", id);
       return n;
     }
 
@@ -368,6 +374,7 @@ class NodeHandler : virtual public NodeIf {
     int ret;
     finger_entry succ;
     succ = me->find_successor_local(key_id);
+    printf("successor.id is %d\n", succ.id);
     if (succ.id == me->id) {
       pair<map<int, _FILE>::iterator, bool> check; 
       check = me->keys_table.insert(pair<int, _FILE>(key_id, s)); 
