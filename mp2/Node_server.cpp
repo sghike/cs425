@@ -335,6 +335,9 @@ class NodeHandler : virtual public NodeIf {
       pthread_mutex_unlock(&finger_lock);
       return;
     }
+    if (n.id == me->id) {
+      return;
+    }
     pthread_mutex_unlock(&finger_lock);
 
     boost::shared_ptr<TSocket> socket(new TSocket("localhost", n.port));
