@@ -770,7 +770,7 @@ int make_syscall(string m_val, int ID, int port_num, string si_val,
     }
     command.append(" & ");
     in = popen(command.c_str(), "w");
-   
+    return 0;
 }
 
 // output of get table
