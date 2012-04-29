@@ -87,10 +87,10 @@ class Node {
         cout << "node= " << id << ": updated predecessor= " << predecessor.id << endl;
         cout << "node= " << id << ": updated finger entry: i= " << 1 << ", pointer= " << finger_table[0].id << endl;
       } else {
-          predecessor.id = -1;
-          predecessor.port = -1;
-          successor.id = -1;
-          successor.port = -1;
+        predecessor.id = -1;
+        predecessor.port = -1;
+        successor.id = -1;
+        successor.port = -1;
       }
       stabilizeInterval = 1;
       fixInterval = 1;
@@ -259,7 +259,7 @@ class Node {
       map<int, _FILE> offload;
       map<int, _FILE>::iterator it;
 
-      // At this point, fingers_lock is already locked.
+      // At this point, finger_lock is already locked.
       pthread_mutex_lock(&keys_lock);
       for (it = keys_table.begin(); it != keys_table.end();) {
         if (it->first <= predecessor.id) {
@@ -271,6 +271,7 @@ class Node {
       }
       pthread_mutex_unlock(&keys_lock);
 
+      // At this point, finger_lock is already locked.
       boost::shared_ptr<TSocket> socket(new TSocket("localhost", predecessor.port));
       boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
       boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
@@ -399,7 +400,7 @@ class NodeHandler : virtual public NodeIf {
       }
     }
     if (me->predecessor.id != -1) {
-      // This funcions locks keys_lock.
+      // This function locks keys_lock.
       me->moveFilesToPred();
     }
     pthread_mutex_unlock(&finger_lock);
@@ -429,6 +430,13 @@ class NodeHandler : virtual public NodeIf {
       transport->close();
 
       if (pred_succ.id != id) {
+        int i;
+        finger_entry null_finger;
+        null_finger.id = -1;
+        null_finger.port = -1;
+        for (i = 0; i < me->m; i++) {
+          _return.finger_table.push_back(null_finger);
+        }
         return;
       } else {
         boost::shared_ptr<TSocket> socket1(new TSocket("localhost", 
@@ -694,8 +702,6 @@ int main(int argc, char **argv) {
   threadManager->threadFactory(threadFactory);
   threadManager->start();
   TThreadedServer server(processor, serverTransport, transportFactory, protocolFactory);
-  
-
 
   if (me->id > 0) {
     me->join(0);
