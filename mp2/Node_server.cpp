@@ -480,7 +480,7 @@ class NodeHandler : virtual public NodeIf {
   bool accept_files(const std::map<int32_t, _FILE> & offload) {
     // Your implementation goes here
     printf("accept_files\n");
-    me->keys_table = offload;
+    me->keys_table.insert(offload.begin(), offload.end());
     return true;
   }
 
