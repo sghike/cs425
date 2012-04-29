@@ -786,6 +786,7 @@ string get_GET_TABLE_result_as_string(
         const uint32_t m,
         const uint32_t id,
         const uint32_t idx_of_entry1,
+        const int32_t predecessor_id,
         const map<int32_t, _FILE>& keys_table)
     {
         return get_finger_table_as_string(
