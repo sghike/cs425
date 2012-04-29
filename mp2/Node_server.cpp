@@ -38,6 +38,8 @@ using boost::shared_ptr;
 using namespace  ::mp2;
 using namespace std;
 
+pthread_mutex_t finger_lock, keys_lock;
+
 int ipow(int base, int exp) {
     int result = 1;
     while (exp)
@@ -72,9 +74,10 @@ class Node {
       this->m = m;
       this->id = id;
       this->port = port;
-      for (i = 0; i < m; i++)
+      for (i = 0; i < m; i++) {
         finger_table.push_back(null_finger);
-      if (id == 0){
+      }
+      if (id == 0) {
         introducerPort = port;
         predecessor.id = id;
         predecessor.port = port;
@@ -83,15 +86,12 @@ class Node {
         finger_table[0] = successor;
         cout << "node= " << id << ": updated predecessor= " << predecessor.id << endl;
         cout << "node= " << id << ": updated finger entry: i= " << 1 << ", pointer= " << finger_table[0].id << endl;
-      }
-      else
-      {
+      } else {
           predecessor.id = -1;
           predecessor.port = -1;
           successor.id = -1;
           successor.port = -1;
       }
-
       stabilizeInterval = 1;
       fixInterval = 1;
       seed = 10;
@@ -121,11 +121,12 @@ class Node {
       // printf("id = %d in find_successor_local\n", id);
       finger_entry n = find_predecessor(id);
       //printf("predecessor = %d id = %d \n", n.id, id);
-      if (n.id == this->id)
-      {
+      if (n.id == this->id) {
+        pthread_mutex_lock(&finger_lock);
         finger_entry _return;
         _return.id = this->successor.id;
         _return.port = this->successor.port;
+        pthread_mutex_unlock(&finger_lock);
         return _return;
       }
       boost::shared_ptr<TSocket> socket(new TSocket("localhost", n.port));
@@ -145,12 +146,17 @@ class Node {
       finger_entry n;
       n.id = this->id;
       n.port = this->port;
+
+      pthread_mutex_lock(&finger_lock);
       int succ = successor.id;
     //  printf("n.id is %d and succ.id is %d and id is %d\n", n.id, succ, id);
-      if(id == this->id)
-      {
-          return this->predecessor;
+      if (id == this->id) {
+        finger_entry pred = this->predecessor;
+        pthread_mutex_unlock(&finger_lock);
+        return pred;
       }
+      pthread_mutex_unlock(&finger_lock);
+
       while ((succ != n.id) && !((succ > n.id && (id > n.id && id <= succ)) || 
              (n.id > succ && (id > n.id || id <= succ)))) {
         boost::shared_ptr<TSocket> socket1(new TSocket("localhost", n.port));
@@ -197,8 +203,7 @@ class Node {
       transport->close(); 
       this->successor = succ;
       cout << "node = " << id << ": initial sucessor= " << successor.id << endl;
-      if (finger_table[0] != this->successor)
-      {
+      if (finger_table[0] != this->successor) {
           finger_table[0] = this->successor;    
           cout << "node= " << id << ": updated finger entry: i= " << 1 << ", pointer= " << finger_table[0].id << endl;
       }
@@ -216,15 +221,16 @@ class Node {
       client.get_predecessor(x);
       transport->close();
 
+      pthread_mutex_lock(&finger_lock);
       if ((id < successor.id && (x.id > id && x.id < successor.id)) ||
           (successor.id < id && (x.id > id || x.id < successor.id))) {
         successor = x;
-        if (finger_table[0] != this->successor)
-        {
-            finger_table[0] = successor;
-        cout << "node= " << id << ": updated finger entry: i= " << 1 << ", pointer= " << finger_table[0].id << endl;
+        if (finger_table[0] != this->successor) {
+          finger_table[0] = successor;
+          cout << "node= " << id << ": updated finger entry: i= " << 1 << ", pointer= " << finger_table[0].id << endl;
         }
       }
+      pthread_mutex_unlock(&finger_lock);
 
       transport->open();
       finger_entry my_entry;
@@ -240,15 +246,21 @@ class Node {
       int start = (id + ipow(2, i)) % ipow(2, m);
       // printf("i is %d and start is %d", i, start);
       finger_entry new_finger = find_successor_local(start);
+      
+      pthread_mutex_lock(&finger_lock);
       if (finger_table[i] != new_finger) {
         finger_table[i] = new_finger;
         cout << "node= " << id << ": updated finger entry: i= " << i+1 << ", pointer= " << new_finger.id << endl;
       }
+      pthread_mutex_unlock(&finger_lock);
     }
 
     void moveFilesToPred() {
       map<int, _FILE> offload;
       map<int, _FILE>::iterator it;
+
+      // At this point, fingers_lock is already locked.
+      pthread_mutex_lock(&keys_lock);
       for (it = keys_table.begin(); it != keys_table.end();) {
         if (it->first <= predecessor.id) {
           offload.insert(*it);
@@ -257,6 +269,8 @@ class Node {
           ++it;
         }
       }
+      pthread_mutex_unlock(&keys_lock);
+
       boost::shared_ptr<TSocket> socket(new TSocket("localhost", predecessor.port));
       boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
       boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
@@ -269,21 +283,17 @@ class Node {
       }
     }
     
-    int computeHash(string filename)
-    {
+    int computeHash(string filename)  {
       int key_id;
       SHA1Context sha;
       SHA1Reset(&sha);
       SHA1Input(&sha, (unsigned char*)filename.c_str(), filename.size());
-      if (!SHA1Result(&sha))
-      {
-          cout << "key_gen_test: could not compute key ID for" << filename << endl;
-          return -1;
-      }
-      else
-      {
-          key_id = sha.Message_Digest[4]%((int)pow(2,m)) ;
-          cout << "Key ID for " << filename << " : " << key_id << endl;
+      if (!SHA1Result(&sha)) {
+        cout << "key_gen_test: could not compute key ID for" << filename << endl;
+        return -1;
+      } else {
+        key_id = sha.Message_Digest[4]%((int)pow(2,m)) ;
+        cout << "Key ID for " << filename << " : " << key_id << endl;
       }
       return key_id;
     }
@@ -304,6 +314,7 @@ class NodeHandler : virtual public NodeIf {
     
     finger_entry n = me->find_predecessor(caller.id);
     
+    pthread_mutex_lock(&finger_lock);
     if (n.id == me->id) {
       _return.id = me->successor.id;
       _return.port = me->successor.port;
@@ -315,10 +326,13 @@ class NodeHandler : virtual public NodeIf {
       me->predecessor.port = caller.port;
       me->finger_table[0] = me->successor;
       // print statements here
-        cout << "node= " << me->id << ": updated predecessor= " << me->predecessor.id << endl;
-        cout << "node= " << me->id << ": updated finger entry: i= " << 1 << ", pointer= " << me->finger_table[0].id << endl;
+      cout << "node= " << me->id << ": updated predecessor= " << me->predecessor.id << endl;
+      cout << "node= " << me->id << ": updated finger entry: i= " << 1 << ", pointer= " << me->finger_table[0].id << endl;
+      pthread_mutex_unlock(&finger_lock);
       return;
     }
+    pthread_mutex_unlock(&finger_lock);
+
     boost::shared_ptr<TSocket> socket(new TSocket("localhost", n.port));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
@@ -336,6 +350,8 @@ class NodeHandler : virtual public NodeIf {
     // Your implementation goes here
     // printf("closest_preceding_finger\n");
     int i;
+    
+    pthread_mutex_lock(&finger_lock);
     for (i = me->m - 1; i >= 0; i--) {
       int finger_id = me->finger_table[i].id;
       if (finger_id == -1)
@@ -343,9 +359,12 @@ class NodeHandler : virtual public NodeIf {
       if ((me->id < id && (finger_id > me->id && finger_id < id)) ||
           (me->id > id && (finger_id < id || finger_id > me->id))) {
         _return = me->finger_table[i];
+        pthread_mutex_unlock(&finger_lock);
         return;
       }
     }
+    pthread_mutex_unlock(&finger_lock);
+
     _return.id  = me->id;
     _return.port = me->port;
   }
@@ -353,18 +372,23 @@ class NodeHandler : virtual public NodeIf {
   void get_successor(finger_entry& _return) {
     // Your implementation goes here
     // printf("get_successor\n");
+    pthread_mutex_lock(&finger_lock);
     _return = me->successor;
+    pthread_mutex_unlock(&finger_lock);
   }
 
   void get_predecessor(finger_entry& _return) {
     // Your implementation goes here
     // printf("get_predecessor\n");
+    pthread_mutex_lock(&finger_lock);
     _return = me->predecessor;
+    pthread_mutex_unlock(&finger_lock);
   }
 
   void notify(const finger_entry& n) {
     // Your implementation goes here
     // printf("notify\n");
+    pthread_mutex_lock(&finger_lock);
     if ((me->predecessor.id == -1) || 
         ((me->predecessor.id < me->id && (n.id > me->predecessor.id && n.id < me->id)) ||
          (me->id < me->predecessor.id && (n.id > me->predecessor.id || n.id < me->id)))) {
@@ -375,16 +399,22 @@ class NodeHandler : virtual public NodeIf {
       }
     }
     if (me->predecessor.id != -1) {
+      // This funcions locks keys_lock.
       me->moveFilesToPred();
     }
+    pthread_mutex_unlock(&finger_lock);
   }
   
   void get_table(node_table& _return, const int32_t id) {
     // Your implementation goes here
     printf("get_table\n");
     if (me->id == id) {
+      pthread_mutex_lock(&finger_lock);
+      pthread_mutex_lock(&keys_lock);
       _return.finger_table = me->finger_table;
       _return.keys_table = me->keys_table;
+      pthread_mutex_unlock(&keys_lock);
+      pthread_mutex_unlock(&finger_lock);
       return;
     } else {
       finger_entry pred;
@@ -423,7 +453,9 @@ class NodeHandler : virtual public NodeIf {
     printf("successor.id is %d\n", succ.id);
     if (succ.id == me->id) {
       pair<map<int, _FILE>::iterator, bool> check; 
+      pthread_mutex_lock(&keys_lock);
       check = me->keys_table.insert(pair<int, _FILE>(key_id, s)); 
+      pthread_mutex_unlock(&keys_lock);
       if (check.second == false) {
         printf("file with same key exists already\n");
         ret = -1; //failure
@@ -447,10 +479,11 @@ class NodeHandler : virtual public NodeIf {
     // Your implementation goes here
     printf("del_file\n");
     int ret;
-    finger_entry succ;
-    succ = me->find_successor_local(key_id);
+    finger_entry succ = me->find_successor_local(key_id);
     if (succ.id == me->id) {
+      pthread_mutex_lock(&keys_lock);
       int del = me->keys_table.erase(key_id); 
+      pthread_mutex_unlock(&keys_lock);
       if (del == 0) {
         ret = -1; //failure
         cout << "node= " << me->id << ": no such file k= " << key_id << " to delete" << endl;
@@ -473,10 +506,10 @@ class NodeHandler : virtual public NodeIf {
   void get_file(file_data& _return, const int32_t key_id) {
     // Your implementation goes here
     printf("get_file\n");
-    finger_entry succ;
-    succ = me->find_successor_local(key_id);
+    finger_entry succ = me->find_successor_local(key_id);
     if (succ.id == me->id) {
       map<int, _FILE>::iterator it;
+      pthread_mutex_lock(&keys_lock);
       it = me->keys_table.find(key_id); 
       if (it == me->keys_table.end()) { //failure
         _return.node = -1;
@@ -486,6 +519,7 @@ class NodeHandler : virtual public NodeIf {
          _return.file = me->keys_table[key_id]; // success
          cout << "node= " << me->id << ": served file: k= " << key_id << endl;
       }
+      pthread_mutex_unlock(&keys_lock);
     } else {
       boost::shared_ptr<TSocket> socket(new TSocket("localhost", succ.port));
       boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
@@ -500,7 +534,9 @@ class NodeHandler : virtual public NodeIf {
   bool accept_files(const std::map<int32_t, _FILE> & offload) {
     // Your implementation goes here
     printf("accept_files\n");
+    pthread_mutex_lock(&keys_lock);
     me->keys_table.insert(offload.begin(), offload.end());
+    pthread_mutex_unlock(&keys_lock);
     return true;
   }
  
@@ -510,7 +546,6 @@ class NodeHandler : virtual public NodeIf {
     int hash = me->computeHash(s.name);
     int32_t add = add_file(hash, s);
     return add;
-    
   }
 
   int32_t dummy_del_file(const std::string& key) {
@@ -519,7 +554,6 @@ class NodeHandler : virtual public NodeIf {
     int hash = me->computeHash(key);
     int32_t del = del_file(hash);
     return del;
-
   }
 
   void dummy_get_file(file_data& _return, const std::string& key) {
