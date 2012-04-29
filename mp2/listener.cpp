@@ -765,7 +765,7 @@ int make_syscall(string m_val, int ID, int port_num, string si_val,
     }
     //command.append(" 2>&1");
     command.append(" & ");
-    in = popen(command.c_str(), "r");
+    in = popen(command.c_str(), "w");
    // in = popen(command.c_str(), "r");
     return 0;
 
