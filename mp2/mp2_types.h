@@ -115,16 +115,17 @@ class _FILE {
 };
 
 typedef struct _node_table__isset {
-  _node_table__isset() : finger_table(false), keys_table(false) {}
+  _node_table__isset() : finger_table(false), predecessor(false), keys_table(false) {}
   bool finger_table;
+  bool predecessor;
   bool keys_table;
 } _node_table__isset;
 
 class node_table {
  public:
 
-  static const char* ascii_fingerprint; // = "B334B55E1B4598B5FA65B2526D9F8D52";
-  static const uint8_t binary_fingerprint[16]; // = {0xB3,0x34,0xB5,0x5E,0x1B,0x45,0x98,0xB5,0xFA,0x65,0xB2,0x52,0x6D,0x9F,0x8D,0x52};
+  static const char* ascii_fingerprint; // = "036EEE9BFD6C9942B0949C5E4EFEE818";
+  static const uint8_t binary_fingerprint[16]; // = {0x03,0x6E,0xEE,0x9B,0xFD,0x6C,0x99,0x42,0xB0,0x94,0x9C,0x5E,0x4E,0xFE,0xE8,0x18};
 
   node_table() {
   }
@@ -132,12 +133,17 @@ class node_table {
   virtual ~node_table() throw() {}
 
   std::vector<finger_entry>  finger_table;
+  finger_entry predecessor;
   std::map<int32_t, _FILE>  keys_table;
 
   _node_table__isset __isset;
 
   void __set_finger_table(const std::vector<finger_entry> & val) {
     finger_table = val;
+  }
+
+  void __set_predecessor(const finger_entry& val) {
+    predecessor = val;
   }
 
   void __set_keys_table(const std::map<int32_t, _FILE> & val) {
@@ -147,6 +153,8 @@ class node_table {
   bool operator == (const node_table & rhs) const
   {
     if (!(finger_table == rhs.finger_table))
+      return false;
+    if (!(predecessor == rhs.predecessor))
       return false;
     if (!(keys_table == rhs.keys_table))
       return false;

@@ -12,7 +12,8 @@ struct _FILE {
 
 struct node_table {
   1: list<finger_entry> finger_table;
-  2: map<i32, _FILE> keys_table;
+  2: finger_entry predecessor;
+  3: map<i32, _FILE> keys_table;
 }
 
 struct file_data {

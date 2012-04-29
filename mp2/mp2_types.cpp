@@ -138,8 +138,8 @@ uint32_t _FILE::write(::apache::thrift::protocol::TProtocol* oprot) const {
   return xfer;
 }
 
-const char* node_table::ascii_fingerprint = "B334B55E1B4598B5FA65B2526D9F8D52";
-const uint8_t node_table::binary_fingerprint[16] = {0xB3,0x34,0xB5,0x5E,0x1B,0x45,0x98,0xB5,0xFA,0x65,0xB2,0x52,0x6D,0x9F,0x8D,0x52};
+const char* node_table::ascii_fingerprint = "036EEE9BFD6C9942B0949C5E4EFEE818";
+const uint8_t node_table::binary_fingerprint[16] = {0x03,0x6E,0xEE,0x9B,0xFD,0x6C,0x99,0x42,0xB0,0x94,0x9C,0x5E,0x4E,0xFE,0xE8,0x18};
 
 uint32_t node_table::read(::apache::thrift::protocol::TProtocol* iprot) {
 
@@ -182,6 +182,14 @@ uint32_t node_table::read(::apache::thrift::protocol::TProtocol* iprot) {
         }
         break;
       case 2:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->predecessor.read(iprot);
+          this->__isset.predecessor = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 3:
         if (ftype == ::apache::thrift::protocol::T_MAP) {
           {
             this->keys_table.clear();
@@ -230,7 +238,10 @@ uint32_t node_table::write(::apache::thrift::protocol::TProtocol* oprot) const {
     xfer += oprot->writeListEnd();
   }
   xfer += oprot->writeFieldEnd();
-  xfer += oprot->writeFieldBegin("keys_table", ::apache::thrift::protocol::T_MAP, 2);
+  xfer += oprot->writeFieldBegin("predecessor", ::apache::thrift::protocol::T_STRUCT, 2);
+  xfer += this->predecessor.write(oprot);
+  xfer += oprot->writeFieldEnd();
+  xfer += oprot->writeFieldBegin("keys_table", ::apache::thrift::protocol::T_MAP, 3);
   {
     xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_I32, ::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->keys_table.size()));
     std::map<int32_t, _FILE> ::const_iterator _iter13;
