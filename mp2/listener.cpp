@@ -76,7 +76,8 @@ int main(int argc, char* argv[])
     // initialize global variables
     introducer_port = 0;
     atn_port = 0;
-
+    ports.clear();
+    srand(time(NULL));
     // parse out arguments and check if they are valid
     for(i = 1; i < argc; i++)
     {
@@ -146,8 +147,6 @@ int main(int argc, char* argv[])
         }
         m_val.assign(argv[m_pos+1]);
         check_int.clear();
-        cout << "the number of bits of the keys/nodeIDs : " << atoi(argv[m_pos+1]) << endl;
-        
     }
     if(si == 1)
     {
@@ -226,7 +225,6 @@ int main(int argc, char* argv[])
             return -1;
         }
                
-        cout << "checking " << number_of_ports << " ports : " ;
         for(i = 0; i < number_of_ports; i++)
         {
             cout << atoi(argv[sp_pos+1+i]) << " ";
@@ -249,9 +247,8 @@ int main(int argc, char* argv[])
         check_int.clear();
     }
 
-    if(lc == 1)
-        cout << "logging is enabled" << endl;    
-    
+    if(atn ==0)
+    	add_node_func("ADD_NODE 0", ports, m_val, si_val, fi_val, lc); 
     // take inputs from the terminal
     while(1)
     {
@@ -352,8 +349,6 @@ int add_node(int ID, vector<int> ports, string  m_val, string si_val,
     // pick a port number 49152 and 65535
     // registered and well-known ports are not used
     // check if the port is available
-    srand (time(NULL));
-    
     while (i != 0)
     {
         if(ports.empty() == true)
@@ -375,10 +370,12 @@ int add_node(int ID, vector<int> ports, string  m_val, string si_val,
     // create a process listening on port rand_port
     if(make_syscall(m_val, ID, port_num, si_val, fi_val, lc, seed) == 1)
     {
-        cout << "syscall failed"; 
-        return 1;
+        cout << "syscall failed";
+               return 1;
     }
-    
+    if(ID == 0)
+           sleep(2); 
+ 
     return 0;
 }
 
@@ -390,6 +387,10 @@ int add_file(string input, string m_val)
     string filename, data;
     vector<string> tokens;
     vector<string>::iterator it;
+    vector<string>::size_type sz;
+    size_t pos = size_t(0);
+    size_t found = 0;
+    unsigned int i = 0;
     int m;
     SHA1Context sha;
    // FILE *fp;
@@ -404,13 +405,18 @@ int add_file(string input, string m_val)
          tokens.push_back(buf);
    
     // parse out file name and data
+    sz = tokens.size();
     it = tokens.begin()+1;
     filename.assign(*it);
-    it++;
-    data.assign(*it);
-        
-    cout << "filename is : " << filename << endl;
-    cout << "file data is : " << data << endl;
+   for(i = 0; i < 2; i++)   
+   {
+        found = input.find(" ", found);
+        found++;
+   }
+   data = input.substr(found);
+    
+   cout << "filename is : " << filename << endl;
+   cout << "file data is : " << data << endl;
     
     file.name = filename;
     file.data = data;
@@ -668,7 +674,7 @@ int scan_port(int port_num)
 
     // make a socket
     sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    cout << "Checking port : " << port_num << endl;
+ //   cout << "Checking port : " << port_num << endl;
     // see if port is usuable by trying to bind to socket
     ver = bind(sockfd, res->ai_addr, res->ai_addrlen);
    
@@ -753,7 +759,7 @@ int make_syscall(string m_val, int ID, int port_num, string si_val,
         command.append(" --logConf");
     }
 
-    cout << command << endl;
+   // cout << command << endl;
     in = popen(command.c_str(), "r");
     return 0;
 
