@@ -78,6 +78,7 @@ class Node {
         finger_table.push_back(null_finger);
       }
       if (id == 0) {
+        /* If id is 0, form a ring with id 0.*/
         introducerPort = port;
         predecessor.id = id;
         predecessor.port = port;
@@ -117,10 +118,11 @@ class Node {
       srand(seed);
     }
 
+    /* Use this function when trying to find the successor of id. We use this
+     * function in all cases except when a node joins and asks the introducer to
+     * find its own successor.*/
     finger_entry find_successor_local(int id) {
-      // printf("id = %d in find_successor_local\n", id);
       finger_entry n = find_predecessor(id);
-      //printf("predecessor = %d id = %d \n", n.id, id);
       if (n.id == this->id) {
         pthread_mutex_lock(&finger_lock);
         finger_entry _return;
@@ -149,7 +151,6 @@ class Node {
 
       pthread_mutex_lock(&finger_lock);
       int succ = successor.id;
-    //  printf("n.id is %d and succ.id is %d and id is %d\n", n.id, succ, id);
       if (id == this->id) {
         finger_entry pred = this->predecessor;
         pthread_mutex_unlock(&finger_lock);
@@ -160,7 +161,8 @@ class Node {
       while ((succ != n.id) && !((succ > n.id && (id > n.id && id <= succ)) || 
              (n.id > succ && (id > n.id || id <= succ)))) {
         boost::shared_ptr<TSocket> socket1(new TSocket("localhost", n.port));
-        boost::shared_ptr<TTransport> transport1(new TBufferedTransport(socket1));
+        boost::shared_ptr<TTransport> 
+          transport1(new TBufferedTransport(socket1));
         boost::shared_ptr<TProtocol> protocol1(new TBinaryProtocol(transport1));
         NodeClient client1(protocol1);
         transport1->open();
@@ -178,10 +180,10 @@ class Node {
         succ = n_successor.id;
         transport2->close();
       }
-      //printf("after while loop id = %d\n", id);
       return n;
     }
 
+    /* Introduce this node to the introducer. */
     void join(int introducer) {
       predecessor.id = -1;
       predecessor.port =-1;
@@ -209,6 +211,7 @@ class Node {
       }
     }
 
+    /* Function used to stabilize successor pointers.*/
     void stabilize() {
       // printf("in stabilize\n");
       boost::shared_ptr<TSocket> socket(new TSocket("localhost", 
@@ -240,11 +243,10 @@ class Node {
       transport->close();
     }
 
+    /* Function used to fix the finger table as new nodes join.*/
     void fix_fingers() {
-      // printf("inside fix fingers\n");
       int i = (rand() % (m-1)) + 1;
       int start = (id + ipow(2, i)) % ipow(2, m);
-      // printf("i is %d and start is %d", i, start);
       finger_entry new_finger = find_successor_local(start);
       
       pthread_mutex_lock(&finger_lock);
@@ -255,6 +257,8 @@ class Node {
       pthread_mutex_unlock(&finger_lock);
     }
 
+    /* Check if there are any files that should be moved to the predecessor
+     * node, and move them if there are any.*/
     void moveFilesToPred() {
       map<int, _FILE> offload;
       map<int, _FILE>::iterator it;
@@ -272,7 +276,8 @@ class Node {
       pthread_mutex_unlock(&keys_lock);
 
       // At this point, finger_lock is already locked.
-      boost::shared_ptr<TSocket> socket(new TSocket("localhost", predecessor.port));
+      boost::shared_ptr<TSocket> 
+        socket(new TSocket("localhost", predecessor.port));
       boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
       boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
       NodeClient client(protocol);
@@ -308,11 +313,10 @@ class NodeHandler : virtual public NodeIf {
   NodeHandler() {
     // Your initialization goes here
   }
-  
+ 
+  /* Find successor node of id. This function is used when a new node joins the
+   * systems and asks the introducer about its own successor.*/
   void find_successor(finger_entry& _return, const finger_entry& caller) {
-    // Your implementation goes here
-    // printf("find_successor\n");
-    
     finger_entry n = me->find_predecessor(caller.id);
     
     pthread_mutex_lock(&finger_lock);
@@ -326,7 +330,6 @@ class NodeHandler : virtual public NodeIf {
       me->predecessor.id = caller.id;
       me->predecessor.port = caller.port;
       me->finger_table[0] = me->successor;
-      // print statements here
       cout << "node= " << me->id << ": updated predecessor= " << me->predecessor.id << endl;
       cout << "node= " << me->id << ": updated finger entry: i= " << 1 << ", pointer= " << me->finger_table[0].id << endl;
       pthread_mutex_unlock(&finger_lock);
@@ -339,17 +342,13 @@ class NodeHandler : virtual public NodeIf {
     boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
     NodeClient client(protocol);
     transport->open();
-
-   //  printf("n id is %d n port is %d\n", n.id, n.port);
     client.get_successor(_return);
-    
     transport->close();
   }
 
-
+  /* Find the finger entry whose node is closest behind id in the direction of
+   * the ring among all finger entries.*/
   void closest_preceding_finger(finger_entry& _return, const int32_t id) {
-    // Your implementation goes here
-    // printf("closest_preceding_finger\n");
     int i;
     
     pthread_mutex_lock(&finger_lock);
@@ -369,31 +368,28 @@ class NodeHandler : virtual public NodeIf {
     _return.id  = me->id;
     _return.port = me->port;
   }
-  
+ 
+  /* Return successor of this node.*/
   void get_successor(finger_entry& _return) {
-    // Your implementation goes here
-    // printf("get_successor\n");
     pthread_mutex_lock(&finger_lock);
     _return = me->successor;
     pthread_mutex_unlock(&finger_lock);
   }
 
+  /* Return predecessor of this node.*/
   void get_predecessor(finger_entry& _return) {
-    // Your implementation goes here
-    // printf("get_predecessor\n");
     pthread_mutex_lock(&finger_lock);
     _return = me->predecessor;
     pthread_mutex_unlock(&finger_lock);
   }
 
+  /* Get the notification of the presence of predecessor node and update
+   * predecessor pointer accordingly. Also move any files if required.*/
   void notify(const finger_entry& n) {
-    // Your implementation goes here
-    // printf("notify\n");
     pthread_mutex_lock(&finger_lock);
     if ((me->predecessor.id == -1) || 
         ((me->predecessor.id < me->id && (n.id > me->predecessor.id && n.id < me->id)) ||
          (me->id < me->predecessor.id && (n.id > me->predecessor.id || n.id < me->id)))) {
-     // printf("me->predecessor is %d and n.id is %d\n", me->predecessor.id, n.id);
       if (me->predecessor != n) {
         me->predecessor = n;
         cout << "node= " << me->id << ": updated predecessor= " << n.id << endl;
@@ -406,9 +402,8 @@ class NodeHandler : virtual public NodeIf {
     pthread_mutex_unlock(&finger_lock);
   }
   
+  /* Get finger table and keys table of node id.*/
   void get_table(node_table& _return, const int32_t id) {
-    // Your implementation goes here
-    //printf("get_table\n");
     if (me->id == id) {
       pthread_mutex_lock(&finger_lock);
       pthread_mutex_lock(&keys_lock);
@@ -451,14 +446,13 @@ class NodeHandler : virtual public NodeIf {
       }
     }
   }
-  
+ 
+  /* Add file with id key_id to the appropriate node. Return -1 if trying to
+   * overwrite a file with the same key.*/
   int32_t add_file(const int32_t key_id, const _FILE& s) {
-    // Your implementation goes here
-    //printf("add_file\n");
     int ret;
     finger_entry succ;
     succ = me->find_successor_local(key_id);
-    //printf("successor.id is %d\n", succ.id);
     if (succ.id == me->id) {
       pair<map<int, _FILE>::iterator, bool> check; 
       pthread_mutex_lock(&keys_lock);
@@ -483,9 +477,9 @@ class NodeHandler : virtual public NodeIf {
     return ret;
   }
 
+  /* Delete file with id key_id from the appropriate node. Return -1 if file not
+   * found.*/
   int32_t del_file(const int32_t key_id) {
-    // Your implementation goes here
-    //printf("del_file\n");
     int ret;
     finger_entry succ = me->find_successor_local(key_id);
     if (succ.id == me->id) {
@@ -511,9 +505,9 @@ class NodeHandler : virtual public NodeIf {
     return ret;
   }
 
+  /* Get the data contained in file with id key_if from the appropriate node.
+   * Also return the node id and -1 node id field if file not found.*/
   void get_file(file_data& _return, const int32_t key_id) {
-    // Your implementation goes here
-    //printf("get_file\n");
     finger_entry succ = me->find_successor_local(key_id);
     if (succ.id == me->id) {
       map<int, _FILE>::iterator it;
@@ -539,41 +533,42 @@ class NodeHandler : virtual public NodeIf {
     }
   }
   
+  /* Accept files sent by a successor node append them to own keys table.*/
   bool accept_files(const std::map<int32_t, _FILE> & offload) {
-    // Your implementation goes here
-    //printf("accept_files\n");
     pthread_mutex_lock(&keys_lock);
     me->keys_table.insert(offload.begin(), offload.end());
     pthread_mutex_unlock(&keys_lock);
     return true;
   }
  
+  /* Called on the first node that uses the filename to compute its id and sends
+   * the file to appropriate node.*/
   int32_t dummy_add_file(const _FILE& s) {
-    // Your implementation goes here
-    //printf("dummy_add_file\n");
     int hash = me->computeHash(s.name);
     int32_t add = add_file(hash, s);
     return add;
   }
 
+  /* Called on the first node that uses the filename to compute its id and
+   * deletes the file from the appropriate node.*/
   int32_t dummy_del_file(const std::string& key) {
-    // Your implementation goes here
-    //printf("dummy_del_file\n");
     int hash = me->computeHash(key);
     int32_t del = del_file(hash);
     return del;
   }
 
+  /* Called on the first node that uses the filename to compute its id and
+   * gets the data of the file and the node that stores it from the appropriate 
+   * node.*/
   void dummy_get_file(file_data& _return, const std::string& key) {
-    // Your implementation goes here
-    //printf("dummy_get_file\n");
     int hash = me->computeHash(key);
     get_file(_return, hash);
   }
 
 };
 
-
+/* Thread function used to periodically stabilize the successor and predecessor
+ * pointers of the nodes.*/
 void *stabilize(void *stabilizeInterval) {
    while (1) {
     sleep(*((int *)stabilizeInterval));
@@ -582,6 +577,7 @@ void *stabilize(void *stabilizeInterval) {
   return NULL;
 }
 
+/* Thread function used to periodically update the finger tables of nodes.*/
 void *fixFingers(void *fixInterval) {
   while (1) {
     sleep(*((int *)fixInterval));
@@ -592,7 +588,6 @@ void *fixFingers(void *fixInterval) {
 
 
 int main(int argc, char **argv) {
-//  INIT_LOCAL_LOGGER();
   int opt;
   int long_index;
 
@@ -676,8 +671,6 @@ int main(int argc, char **argv) {
       }
   }
 
-  // configureLogging(logconffile);
-  
   me = new Node(m, id, port);
   if (introducerPort != -1) {
     me->setIntroducerPort(introducerPort);
