@@ -202,7 +202,7 @@ class Node {
 
       transport->close(); 
       this->successor = succ;
-      cout << "node = " << id << ": initial sucessor= " << successor.id << endl;
+      cout << "node = " << id << ": initial successor= " << successor.id << endl;
       if (finger_table[0] != this->successor) {
           finger_table[0] = this->successor;    
           cout << "node= " << id << ": updated finger entry: i= " << 1 << ", pointer= " << finger_table[0].id << endl;
@@ -393,7 +393,7 @@ class NodeHandler : virtual public NodeIf {
     if ((me->predecessor.id == -1) || 
         ((me->predecessor.id < me->id && (n.id > me->predecessor.id && n.id < me->id)) ||
          (me->id < me->predecessor.id && (n.id > me->predecessor.id || n.id < me->id)))) {
-      printf("me->predecessor is %d and n.id is %d\n", me->predecessor.id, n.id);
+     // printf("me->predecessor is %d and n.id is %d\n", me->predecessor.id, n.id);
       if (me->predecessor != n) {
         me->predecessor = n;
         cout << "node= " << me->id << ": updated predecessor= " << n.id << endl;
@@ -408,7 +408,7 @@ class NodeHandler : virtual public NodeIf {
   
   void get_table(node_table& _return, const int32_t id) {
     // Your implementation goes here
-    printf("get_table\n");
+    //printf("get_table\n");
     if (me->id == id) {
       pthread_mutex_lock(&finger_lock);
       pthread_mutex_lock(&keys_lock);
@@ -454,11 +454,11 @@ class NodeHandler : virtual public NodeIf {
   
   int32_t add_file(const int32_t key_id, const _FILE& s) {
     // Your implementation goes here
-    printf("add_file\n");
+    //printf("add_file\n");
     int ret;
     finger_entry succ;
     succ = me->find_successor_local(key_id);
-    printf("successor.id is %d\n", succ.id);
+    //printf("successor.id is %d\n", succ.id);
     if (succ.id == me->id) {
       pair<map<int, _FILE>::iterator, bool> check; 
       pthread_mutex_lock(&keys_lock);
@@ -485,7 +485,7 @@ class NodeHandler : virtual public NodeIf {
 
   int32_t del_file(const int32_t key_id) {
     // Your implementation goes here
-    printf("del_file\n");
+    //printf("del_file\n");
     int ret;
     finger_entry succ = me->find_successor_local(key_id);
     if (succ.id == me->id) {
@@ -513,7 +513,7 @@ class NodeHandler : virtual public NodeIf {
 
   void get_file(file_data& _return, const int32_t key_id) {
     // Your implementation goes here
-    printf("get_file\n");
+    //printf("get_file\n");
     finger_entry succ = me->find_successor_local(key_id);
     if (succ.id == me->id) {
       map<int, _FILE>::iterator it;
@@ -541,7 +541,7 @@ class NodeHandler : virtual public NodeIf {
   
   bool accept_files(const std::map<int32_t, _FILE> & offload) {
     // Your implementation goes here
-    printf("accept_files\n");
+    //printf("accept_files\n");
     pthread_mutex_lock(&keys_lock);
     me->keys_table.insert(offload.begin(), offload.end());
     pthread_mutex_unlock(&keys_lock);
@@ -550,7 +550,7 @@ class NodeHandler : virtual public NodeIf {
  
   int32_t dummy_add_file(const _FILE& s) {
     // Your implementation goes here
-    printf("dummy_add_file\n");
+    //printf("dummy_add_file\n");
     int hash = me->computeHash(s.name);
     int32_t add = add_file(hash, s);
     return add;
@@ -558,7 +558,7 @@ class NodeHandler : virtual public NodeIf {
 
   int32_t dummy_del_file(const std::string& key) {
     // Your implementation goes here
-    printf("dummy_del_file\n");
+    //printf("dummy_del_file\n");
     int hash = me->computeHash(key);
     int32_t del = del_file(hash);
     return del;
@@ -566,7 +566,7 @@ class NodeHandler : virtual public NodeIf {
 
   void dummy_get_file(file_data& _return, const std::string& key) {
     // Your implementation goes here
-    printf("dummy_get_file\n");
+    //printf("dummy_get_file\n");
     int hash = me->computeHash(key);
     get_file(_return, hash);
   }

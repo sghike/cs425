@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
     }
     if(si == 1)
     {
-        cout << "stabilize interval to " << atoi(argv[si_pos+1]) << endl;
+       // cout << "stabilize interval to " << atoi(argv[si_pos+1]) << endl;
         check_int.assign(argv[si_pos+1]);
         for(j = 0; j < check_int.size(); j++)
         {
@@ -225,15 +225,15 @@ int main(int argc, char* argv[])
             return -1;
         }
                
-        for(i = 0; i < number_of_ports; i++)
+       /* for(i = 0; i < number_of_ports; i++)
         {
             cout << atoi(argv[sp_pos+1+i]) << " ";
         }
-        cout << endl;
+        cout << endl;*/
     }
     if(fi == 1)
     {
-        cout << "fix interval to : " << atoi(argv[fi_pos+1]) << endl;
+        // cout << "fix interval to : " << atoi(argv[fi_pos+1]) << endl;
         check_int.assign(argv[fi_pos+1]);
         for(j = 0; j < check_int.size(); j++)
         {
@@ -413,10 +413,15 @@ int add_file(string input, string m_val)
         found = input.find(" ", found);
         found++;
    }
-   data = input.substr(found);
+   if(found == 0)
+   {
+      data.assign("");
+   }
+   else 
+      data = input.substr(found);
     
-   cout << "filename is : " << filename << endl;
-   cout << "file data is : " << data << endl;
+ //  cout << "filename is : " << filename << endl;
+ //  cout << "file data is : " << data << endl;
     
     file.name = filename;
     file.data = data;
@@ -430,7 +435,7 @@ int add_file(string input, string m_val)
     else
     {
         key_id = sha.Message_Digest[4]%((int)pow(2,m)) ;
-        cout << "Key ID for " << filename << " : " << key_id << endl;
+       // cout << "Key ID for " << filename << " : " << key_id << endl;
     }
     int port;
     // sending information to introducer
@@ -486,7 +491,7 @@ int del_file(string input, string m_val)
     it = tokens.begin()+1;
     filename.assign(*it);
     
-    cout << "filename is : " << filename << endl;
+   // cout << "filename is : " << filename << endl;
     
     // create sha-1 key
    SHA1Reset(&sha);
@@ -498,7 +503,7 @@ int del_file(string input, string m_val)
     else
     {
         key_id = sha.Message_Digest[4]%((int)pow(2,m)) ;
-        cout << "Key ID for " << filename << " : " << key_id << endl;
+        //cout << "Key ID for " << filename << " : " << key_id << endl;
     }    
     int port;
     // sending information to introducer
@@ -567,7 +572,7 @@ int get_file(string input, string m_val)
     else
     {
         key_id = sha.Message_Digest[4]%((int)pow(2,m)) ;
-        cout << "Key ID for " << filename << " : " << key_id << endl;
+       // cout << "Key ID for " << filename << " : " << key_id << endl;
     }
 
     // pass tokens[it] to introducer
@@ -621,7 +626,7 @@ int get_table(string input, string m_val)
     it = tokens.begin()+1;
     id_num = new char [it->size()+1];
     strcpy(id_num, it->c_str());
-    cout << "getting finger table and key table for node : " << atoi(id_num) << "\n";
+    // cout << "getting finger table and key table for node : " << atoi(id_num) << "\n";
            
     // ask the node for the finger table
     int port;
@@ -758,9 +763,10 @@ int make_syscall(string m_val, int ID, int port_num, string si_val,
     {
         command.append(" --logConf");
     }
- 
-    cout << command << endl;
+    //command.append(" 2>&1");
+    command.append(" & ");
     in = popen(command.c_str(), "r");
+   // in = popen(command.c_str(), "r");
     return 0;
 
  /*   pID = fork();
