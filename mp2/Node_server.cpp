@@ -80,8 +80,8 @@ class Node {
         successor.id = id;
         successor.port  = port;
         finger_table[0] = successor;
-        cout << "node= <" << id << ">: updated predecessor= <" << predecessor.id << ">" << endl;
-        cout << "node= <" << id << ">: updated finger entry: i= <" << 1 << ">, pointer= <" << finger_table[0].id << ">" << endl;
+        cout << "node= " << id << ": updated predecessor= " << predecessor.id << endl;
+        cout << "node= " << id << ": updated finger entry: i= " << 1 << ", pointer= " << finger_table[0].id << endl;
       }
       else
       {
@@ -189,11 +189,11 @@ class Node {
 
       transport->close(); 
       this->successor = succ;
-      cout << "node = <" << id << ">: initial sucessor= <" << successor.id << ">" << endl;
+      cout << "node = " << id << ": initial sucessor= " << successor.id << endl;
       if (finger_table[0] != this->successor)
       {
           finger_table[0] = this->successor;    
-          cout << "node= <" << id << ">: updated finger entry: i= <" << 1 << ">, pointer= <" << finger_table[0].id << ">" << endl;
+          cout << "node= " << id << ": updated finger entry: i= " << 1 << ", pointer= " << finger_table[0].id << endl;
       }
     }
 
@@ -215,7 +215,7 @@ class Node {
         if (finger_table[0] != this->successor)
         {
             finger_table[0] = successor;
-        cout << "node= <" << id << ">: updated finger entry: i= <" << 1 << ">, pointer= <" << finger_table[0].id << ">" << endl;
+        cout << "node= " << id << ": updated finger entry: i= " << 1 << ", pointer= " << finger_table[0].id << endl;
         }
       }
 
@@ -235,7 +235,7 @@ class Node {
       finger_entry new_finger = find_successor_local(start);
       if (finger_table[i] != new_finger) {
         finger_table[i] = new_finger;
-        cout << "node= <" << id << ">: updated finger entry: i= <" << i+1 << ">, pointer= <" << new_finger.id << ">" << endl;
+        cout << "node= " << id << ": updated finger entry: i= " << i+1 << ", pointer= " << new_finger.id << endl;
       }
     }
   
@@ -266,8 +266,8 @@ class NodeHandler : virtual public NodeIf {
       me->predecessor.port = caller.port;
       me->finger_table[0] = me->successor;
       // print statements here
-        cout << "node= <" << me->id << ">: updated predecessor= <" << me->predecessor.id << ">" << endl;
-        cout << "node= <" << me->id << ">: updated finger entry: i= <" << 1 << ">, pointer= <" << me->finger_table[0].id << ">" << endl;
+        cout << "node= " << me->id << ": updated predecessor= " << me->predecessor.id << endl;
+        cout << "node= " << me->id << ": updated finger entry: i= " << 1 << ", pointer= " << me->finger_table[0].id << endl;
       return;
     }
     boost::shared_ptr<TSocket> socket(new TSocket("localhost", n.port));
@@ -322,7 +322,7 @@ class NodeHandler : virtual public NodeIf {
       printf("me->predecessor is %d and n.id is %d\n", me->predecessor.id, n.id);
       if (me->predecessor != n) {
         me->predecessor = n;
-        cout << "node= <" << me->id << ">: updated predecessor= <" << n.id << ">" << endl;
+        cout << "node= " << me->id << ": updated predecessor= " << n.id << endl;
       }
     }
   }
@@ -376,7 +376,7 @@ class NodeHandler : virtual public NodeIf {
         ret = -1; //failure
        } else {
         ret = me->id; // success
-        cout << "node= <" << me->id << ">: added file: k= <" << key_id << ">" << endl;
+        cout << "node= " << me->id << ": added file: k= " << key_id << endl;
       }
     } else {
       boost::shared_ptr<TSocket> socket(new TSocket("localhost", succ.port));
@@ -400,10 +400,10 @@ class NodeHandler : virtual public NodeIf {
       int del = me->keys_table.erase(key_id); 
       if (del == 0) {
         ret = -1; //failure
-        cout << "node= <" << me->id << ">: no such file k= <" << key_id << "> to delete" << endl;
+        cout << "node= " << me->id << ": no such file k= " << key_id << " to delete" << endl;
        } else {
         ret = me->id; // success
-        cout << "node= <" << me->id << ">: deleted file: k= <" << key_id << ">" << endl;
+        cout << "node= " << me->id << ": deleted file: k= " << key_id << endl;
       }
     } else {
       boost::shared_ptr<TSocket> socket(new TSocket("localhost", succ.port));
@@ -427,11 +427,11 @@ class NodeHandler : virtual public NodeIf {
       it = me->keys_table.find(key_id); 
       if (it == me->keys_table.end()) { //failure
         _return.node = -1;
-        cout << "node= <" << me->id << ">: no such file k= <" << key_id << "> to serve" << endl;
+        cout << "node= " << me->id << ": no such file k= " << key_id << " to serve" << endl;
        } else {
          _return.node = me->id;
          _return.file = me->keys_table[key_id]; // success
-         cout << "node= <" << me->id << ">: served file: k= <" << key_id << ">" << endl;
+         cout << "node= " << me->id << ": served file: k= " << key_id << endl;
       }
     } else {
       boost::shared_ptr<TSocket> socket(new TSocket("localhost", succ.port));
