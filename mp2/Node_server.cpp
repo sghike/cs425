@@ -567,7 +567,7 @@ class NodeHandler : virtual public NodeIf {
 
 
 void *stabilize(void *stabilizeInterval) {
-  while (1) {
+   while (1) {
     sleep(*((int *)stabilizeInterval));
     me->stabilize();
   }

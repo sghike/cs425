@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
 
     if(atn == 1)
     {
-        cout << "attaching to node " << atoi(argv[atn_pos+1]) << endl;    
+     //   cout << "attaching to node " << atoi(argv[atn_pos+1]) << endl;    
         check_int.assign(argv[atn_pos+1]);
         for(j = 0; j < check_int.size(); j++)
         {
@@ -758,8 +758,8 @@ int make_syscall(string m_val, int ID, int port_num, string si_val,
     {
         command.append(" --logConf");
     }
-
-   // cout << command << endl;
+ 
+    cout << command << endl;
     in = popen(command.c_str(), "r");
     return 0;
 
@@ -811,6 +811,7 @@ get_finger_table_as_string(const vector<finger_entry>& table,
                            const uint32_t idx_of_entry1)
 {
     stringstream s;
+   // cout << "table size is " << table.size() << "idx of entry is " << idx_of_entry1 << endl;
     assert(table.size() == (idx_of_entry1 + m));
     s << "finger table:\n";
     for (size_t i = 1; (i - 1 + idx_of_entry1) < table.size(); ++i) {
