@@ -164,8 +164,7 @@ class node_table {
 };
 
 typedef struct _file_data__isset {
-  _file_data__isset() : found(false), node(false), file(false) {}
-  bool found;
+  _file_data__isset() : node(false), file(false) {}
   bool node;
   bool file;
 } _file_data__isset;
@@ -173,23 +172,18 @@ typedef struct _file_data__isset {
 class file_data {
  public:
 
-  static const char* ascii_fingerprint; // = "259CE4ABE806A3EEF80D27D2FC359CB0";
-  static const uint8_t binary_fingerprint[16]; // = {0x25,0x9C,0xE4,0xAB,0xE8,0x06,0xA3,0xEE,0xF8,0x0D,0x27,0xD2,0xFC,0x35,0x9C,0xB0};
+  static const char* ascii_fingerprint; // = "B653DC64DEACE7BC45A1DCBA5EC3CA53";
+  static const uint8_t binary_fingerprint[16]; // = {0xB6,0x53,0xDC,0x64,0xDE,0xAC,0xE7,0xBC,0x45,0xA1,0xDC,0xBA,0x5E,0xC3,0xCA,0x53};
 
-  file_data() : found(0), node(0) {
+  file_data() : node(0) {
   }
 
   virtual ~file_data() throw() {}
 
-  bool found;
   int32_t node;
   _FILE file;
 
   _file_data__isset __isset;
-
-  void __set_found(const bool val) {
-    found = val;
-  }
 
   void __set_node(const int32_t val) {
     node = val;
@@ -201,8 +195,6 @@ class file_data {
 
   bool operator == (const file_data & rhs) const
   {
-    if (!(found == rhs.found))
-      return false;
     if (!(node == rhs.node))
       return false;
     if (!(file == rhs.file))

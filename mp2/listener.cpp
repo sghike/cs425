@@ -540,6 +540,7 @@ int get_file(string input, string m_val)
     SHA1Context sha;
     FILE *fp;
     int m;
+    file_data data;
 
     m = atoi(m_val.c_str());
 
@@ -587,10 +588,9 @@ int get_file(string input, string m_val)
     NodeClient client(protocol);
     transport->open();
     //call rpc function
-    bool check;
-    int id;
-    char* fdata;
-    get_GET_FILE_result_as_string(filename.c_str(), key_id, check, id, fdata);
+    client.get_file(data, key_id);
+    bool found = (data.node != -1);
+    get_GET_FILE_result_as_string(filename.c_str(), key_id, found, data.node, data.file.data.c_str());
     transport->close(); 
      
     return 0;

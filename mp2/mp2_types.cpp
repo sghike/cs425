@@ -247,8 +247,8 @@ uint32_t node_table::write(::apache::thrift::protocol::TProtocol* oprot) const {
   return xfer;
 }
 
-const char* file_data::ascii_fingerprint = "259CE4ABE806A3EEF80D27D2FC359CB0";
-const uint8_t file_data::binary_fingerprint[16] = {0x25,0x9C,0xE4,0xAB,0xE8,0x06,0xA3,0xEE,0xF8,0x0D,0x27,0xD2,0xFC,0x35,0x9C,0xB0};
+const char* file_data::ascii_fingerprint = "B653DC64DEACE7BC45A1DCBA5EC3CA53";
+const uint8_t file_data::binary_fingerprint[16] = {0xB6,0x53,0xDC,0x64,0xDE,0xAC,0xE7,0xBC,0x45,0xA1,0xDC,0xBA,0x5E,0xC3,0xCA,0x53};
 
 uint32_t file_data::read(::apache::thrift::protocol::TProtocol* iprot) {
 
@@ -271,14 +271,6 @@ uint32_t file_data::read(::apache::thrift::protocol::TProtocol* iprot) {
     switch (fid)
     {
       case 1:
-        if (ftype == ::apache::thrift::protocol::T_BOOL) {
-          xfer += iprot->readBool(this->found);
-          this->__isset.found = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 2:
         if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->node);
           this->__isset.node = true;
@@ -286,7 +278,7 @@ uint32_t file_data::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
-      case 3:
+      case 2:
         if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->file.read(iprot);
           this->__isset.file = true;
@@ -309,13 +301,10 @@ uint32_t file_data::read(::apache::thrift::protocol::TProtocol* iprot) {
 uint32_t file_data::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
   xfer += oprot->writeStructBegin("file_data");
-  xfer += oprot->writeFieldBegin("found", ::apache::thrift::protocol::T_BOOL, 1);
-  xfer += oprot->writeBool(this->found);
-  xfer += oprot->writeFieldEnd();
-  xfer += oprot->writeFieldBegin("node", ::apache::thrift::protocol::T_I32, 2);
+  xfer += oprot->writeFieldBegin("node", ::apache::thrift::protocol::T_I32, 1);
   xfer += oprot->writeI32(this->node);
   xfer += oprot->writeFieldEnd();
-  xfer += oprot->writeFieldBegin("file", ::apache::thrift::protocol::T_STRUCT, 3);
+  xfer += oprot->writeFieldBegin("file", ::apache::thrift::protocol::T_STRUCT, 2);
   xfer += this->file.write(oprot);
   xfer += oprot->writeFieldEnd();
   xfer += oprot->writeFieldStop();

@@ -16,9 +16,8 @@ struct node_table {
 }
 
 struct file_data {
-  1: bool found;
-  2: i32 node;
-  3: _FILE file;
+  1: i32 node;
+  2: _FILE file;
 }
 
 service Node {
