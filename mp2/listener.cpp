@@ -7,7 +7,6 @@
 #include <sstream>
 #include <iostream>
 #include <string>
-#include <vector>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,6 +38,7 @@ using namespace ::apache::thrift::concurrency;
 using namespace ::mp2;
 using boost::shared_ptr;
 
+// global variables for introducer port and attach to node port
 int introducer_port;
 int atn_port;
 
@@ -46,38 +46,48 @@ int main(int argc, char* argv[])
 {
     string input;
     string command;
+    
     int cmp = -1;
     int cmd = 0;
-    int m = 0;
-    int sp = 0;
-    int atn = 0;
-    int si = 0;
-    int fi = 0;
-    int lc = 0;
     int i;
+    int j = 0;   
+
+    // flag for each of the option enabled through user input
+    int m = 0; // m flag
+    int sp = 0; // startingPort
+    int atn = 0; // attachToNode
+    int si = 0; // stabilizationInterval
+    int fi = 0; // fixInterval
+    int lc = 0; // logConf
+
+    // the position of the each argument in the user input
     int m_pos = 0;
     int sp_pos = 0;
     int atn_pos = 0;
     int si_pos = 0;
     int fi_pos = 0;
     int lc_pos = 0;
-    vector<int> ports; 
-    string portnum;
-    int number_of_ports = 0;
-    int j = 0;
-    stringstream ss;
-    string argument;
-    string check_int;
+    
+    // value of each argument from user input
     string m_val;
     string si_val;
     string fi_val;
     string atn_val;  
-    
+
+    vector<int> ports; // sequence of ports that the user specified
+    string portnum;
+    int number_of_ports = 0;
+
+    stringstream ss;
+    string argument;
+    string check_int;
+        
     // initialize global variables
     introducer_port = 0;
     atn_port = 0;
     ports.clear();
     srand(time(NULL));
+
     // parse out arguments and check if they are valid
     for(i = 1; i < argc; i++)
     {
@@ -121,12 +131,14 @@ int main(int argc, char* argv[])
         argument.clear();
     }
     
+    // check if any argument has been specified twice    
     if( m > 1 || sp > 1 || atn > 1 || si > 1 || fi > 1 || lc > 1)
     {   
         cout << "Wrong usage of program\n";
         return -1;
     }   
-    
+
+    // number of bits for key/id    
     if(m == 1)
     {
         // check if the number is actually an integer        
@@ -148,9 +160,10 @@ int main(int argc, char* argv[])
         m_val.assign(argv[m_pos+1]);
         check_int.clear();
     }
+
+    // the interval in seconds between invocation of the stabilization
     if(si == 1)
     {
-       // cout << "stabilize interval to " << atoi(argv[si_pos+1]) << endl;
         check_int.assign(argv[si_pos+1]);
         for(j = 0; j < check_int.size(); j++)
         {
@@ -164,9 +177,9 @@ int main(int argc, char* argv[])
         check_int.clear();
     }
 
+    // the port that some node is listening on and listener is attaching to
     if(atn == 1)
     {
-     //   cout << "attaching to node " << atoi(argv[atn_pos+1]) << endl;    
         check_int.assign(argv[atn_pos+1]);
         for(j = 0; j < check_int.size(); j++)
         {
@@ -181,6 +194,7 @@ int main(int argc, char* argv[])
         atn_port = atoi(atn_val.c_str());
     }
 
+    // the start of the sequence of ports the listener should try
     if(sp == 1)
     {
         i = 1;
@@ -224,13 +238,9 @@ int main(int argc, char* argv[])
             cout << "specify at least one port" << endl;
             return -1;
         }
-               
-       /* for(i = 0; i < number_of_ports; i++)
-        {
-            cout << atoi(argv[sp_pos+1+i]) << " ";
-        }
-        cout << endl;*/
     }
+    
+    // the interval in seconds between the invocation of the fix finger protocol
     if(fi == 1)
     {
         // cout << "fix interval to : " << atoi(argv[fi_pos+1]) << endl;
@@ -247,9 +257,11 @@ int main(int argc, char* argv[])
         check_int.clear();
     }
 
+    // invoke node 0(introducer port) if no attachToNode is specified
     if(atn ==0)
     	add_node_func("ADD_NODE 0", ports, m_val, si_val, fi_val, lc); 
-    // take inputs from the terminal
+
+    // process user commands from the terminal
     while(1)
     {
         cout << "INPUT : ";
@@ -272,7 +284,8 @@ int main(int argc, char* argv[])
         else
             cout << "wrong command" << command << endl;    
           
-        switch(cmp)
+       // call function according to command 
+       switch(cmp)
         {
             case 0:
                 if(atn == 1)
@@ -304,7 +317,6 @@ int main(int argc, char* argv[])
         command.clear();
         cmp = -1;
     }
-    
     return 0;
 }
 
@@ -318,13 +330,13 @@ void add_node_func(string input, vector<int> ports, string m_val,
     vector<string> tokens;
     vector<string>::iterator it;
     ss << input;
+
     while(ss >> buf) 
          tokens.push_back(buf);
 
     if(tokens.size() < 2)
-    {
         cout << "specify at least one node" << endl;
-    }
+
     // parse out node numbers
     for(it = tokens.begin()+1; it < tokens.end(); it++)
     {
@@ -333,7 +345,6 @@ void add_node_func(string input, vector<int> ports, string m_val,
        // cout << "adding node : " << atoi(id_num) << "\n";
         add_node(atoi(id_num), ports, m_val, si_val, fi_val, lc);
     }
-    
     return;
 }
 
@@ -373,8 +384,10 @@ int add_node(int ID, vector<int> ports, string  m_val, string si_val,
         cout << "syscall failed";
                return 1;
     }
+    
+    // if the introducer port is created, give some time to initialize
     if(ID == 0)
-           sleep(2); 
+           sleep(1); 
  
     return 0;
 }
@@ -393,7 +406,6 @@ int add_file(string input, string m_val)
     unsigned int i = 0;
     int m;
     SHA1Context sha;
-   // FILE *fp;
     int32_t key_id;
     _FILE file;
 
@@ -413,20 +425,17 @@ int add_file(string input, string m_val)
         found = input.find(" ", found);
         found++;
    }
+   
    if(found == 0)
-   {
       data.assign("");
-   }
    else 
       data = input.substr(found);
     
- //  cout << "filename is : " << filename << endl;
- //  cout << "file data is : " << data << endl;
-    
     file.name = filename;
     file.data = data;
+   
     // create sha-1 key
-   SHA1Reset(&sha);
+    SHA1Reset(&sha);
     SHA1Input(&sha, (unsigned char*)filename.c_str(), filename.size());
     if (!SHA1Result(&sha))
     {
@@ -437,8 +446,9 @@ int add_file(string input, string m_val)
         key_id = sha.Message_Digest[4]%((int)pow(2,m)) ;
        // cout << "Key ID for " << filename << " : " << key_id << endl;
     }
+   
     int port;
-    // sending information to introducer
+    // sending information to node
     if(introducer_port != 0)
     {
         port = introducer_port;
@@ -452,12 +462,13 @@ int add_file(string input, string m_val)
        cout << "listener is not connected to any node" << endl;
        return 1;
     }
+
+    // call add file rpc function using thrift
     boost::shared_ptr<TSocket> socket(new TSocket("localhost", port));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
     NodeClient client(protocol);
     transport->open();
-    // call rpc function
     int32_t id  = client.dummy_add_file(file);
     string output;
     if(id > -1)
@@ -480,9 +491,10 @@ int del_file(string input, string m_val)
     string filename;
     vector<string> tokens;
     vector<string>::iterator it;
-   int key_id;
+    int key_id;
     SHA1Context sha;
     int m = atoi(m_val.c_str());
+   
     ss << input;
     while(ss >> buf) 
          tokens.push_back(buf);
@@ -491,10 +503,9 @@ int del_file(string input, string m_val)
     it = tokens.begin()+1;
     filename.assign(*it);
     
-   // cout << "filename is : " << filename << endl;
     
     // create sha-1 key
-   SHA1Reset(&sha);
+    SHA1Reset(&sha);
     SHA1Input(&sha, (unsigned char*)filename.c_str(), filename.size());
     if (!SHA1Result(&sha))
     {
@@ -505,8 +516,9 @@ int del_file(string input, string m_val)
         key_id = sha.Message_Digest[4]%((int)pow(2,m)) ;
         //cout << "Key ID for " << filename << " : " << key_id << endl;
     }    
+    
     int port;
-    // sending information to introducer
+    // sending information to node
     if(introducer_port != 0)
     {
         port = introducer_port;
@@ -521,12 +533,12 @@ int del_file(string input, string m_val)
        return 1;
     }
 
+    // call rpc function for delete file
     boost::shared_ptr<TSocket> socket(new TSocket("localhost", port));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
     NodeClient client(protocol);
     transport->open();
-    // call rpc function
     int id  = client.dummy_del_file(filename);
     string output;
     bool check = (id != -1);
@@ -547,7 +559,6 @@ int get_file(string input, string m_val)
     vector<string>::iterator it;
     int key_id;
     SHA1Context sha;
-    FILE *fp;
     int m;
     file_data data;
 
@@ -561,9 +572,8 @@ int get_file(string input, string m_val)
     it = tokens.begin()+1;
     filename.assign(*it);
     
-    cout << "filename is : " << filename << endl;
-     // create sha-1 key
-   SHA1Reset(&sha);
+    // create sha-1 key
+    SHA1Reset(&sha);
     SHA1Input(&sha, (unsigned char*)filename.c_str(), filename.size());
     if (!SHA1Result(&sha))
     {
@@ -572,12 +582,10 @@ int get_file(string input, string m_val)
     else
     {
         key_id = sha.Message_Digest[4]%((int)pow(2,m)) ;
-       // cout << "Key ID for " << filename << " : " << key_id << endl;
     }
 
-    // pass tokens[it] to introducer
+    // sending information to node
     int port;
-    // sending information to introducer
     if(introducer_port != 0)
     {
         port = introducer_port;
@@ -591,12 +599,13 @@ int get_file(string input, string m_val)
        cout << "listener is not connected to any node" << endl;
        return 1;
     }
+
+    // use thrift to call rpc function for get file
     boost::shared_ptr<TSocket> socket(new TSocket("localhost", port));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
     NodeClient client(protocol);
     transport->open();
-    //call rpc function
     client.dummy_get_file(data, filename);
     bool found = (data.node != -1);
     string output;
@@ -626,11 +635,9 @@ int get_table(string input, string m_val)
     it = tokens.begin()+1;
     id_num = new char [it->size()+1];
     strcpy(id_num, it->c_str());
-    // cout << "getting finger table and key table for node : " << atoi(id_num) << "\n";
            
-    // ask the node for the finger table
+    // sending information to node
     int port;
-    // sending information to introducer
     if(introducer_port != 0)
     {
         port = introducer_port;
@@ -644,6 +651,8 @@ int get_table(string input, string m_val)
        cout << "listener is not connected to any node" << endl;
        return 1;
     }
+ 
+    // use thrift to call rpc function for get table
     boost::shared_ptr<TSocket> socket(new TSocket("localhost", port));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
@@ -651,9 +660,9 @@ int get_table(string input, string m_val)
     transport->open();
     node_table table;
     client.get_table(table, atoi(id_num));
-      transport->close(); 
-     
+    transport->close(); 
     cout << get_GET_TABLE_result_as_string(table.finger_table, m, atoi(id_num), 0, table.keys_table);
+
     return 0;
 }
 
@@ -670,6 +679,7 @@ int scan_port(int port_num)
     ss << port_num;
     s = ss.str();    
 
+    // make a socket
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET; 
     hints.ai_socktype = SOCK_STREAM;
@@ -677,27 +687,23 @@ int scan_port(int port_num)
 
     getaddrinfo(NULL, s.c_str(), &hints, &res);
 
-    // make a socket
     sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
- //   cout << "Checking port : " << port_num << endl;
-    // see if port is usuable by trying to bind to socket
+
+    // check if socket can bind
     ver = bind(sockfd, res->ai_addr, res->ai_addrlen);
    
     if(ver == -1)
     {
-     //   cout << "port " << port_num << " is not available" << endl;
+        // port is invalid
         return -1;
     }
-    else{
-      // cout << "port " << port_num << " is available" << endl;
-    }
+  
+    // unbind so that we can use the port on thrift 
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
     {
         perror("setsockopt");
         exit(1);
     }
-     
-  //  cout << "Using port : " << port_num << "\n";
     
     return 0;
 }
@@ -708,7 +714,6 @@ int make_syscall(string m_val, int ID, int port_num, string si_val,
 {
     FILE *in;
     char buff[512];
-   // pid_t pID;
     string command = "./node";
    
     // number of bits of the keys/node IDs
@@ -763,39 +768,12 @@ int make_syscall(string m_val, int ID, int port_num, string si_val,
     {
         command.append(" --logConf");
     }
-    //command.append(" 2>&1");
     command.append(" & ");
     in = popen(command.c_str(), "w");
-   // in = popen(command.c_str(), "r");
-    return 0;
-
- /*   pID = fork();
-    
-    if(pID == 0)
-    {
-        in = popen("./my_server", "r");
-    }
-    
-    else if (pID < 0)
-    {
-        cout << "fail to fork" << endl;
-    }
-    
    
-    
-    if(!(in = popen("./my_server", "w")))
-    {
-        return 1;
-    }   
-    
-    while(fgets(buff, sizeof(buff), in) != NULL)
-    {
-        cout << buff;
-    }
-    
-    pclose(in);  */
 }
 
+// output of get table
 string get_GET_TABLE_result_as_string(
         const vector<finger_entry>& finger_table,
         const uint32_t m,
@@ -809,15 +787,13 @@ string get_GET_TABLE_result_as_string(
             get_keys_table_as_string(keys_table);
     }
 
-
-string
-get_finger_table_as_string(const vector<finger_entry>& table,
+// outp0ut of get_finger_table
+string get_finger_table_as_string(const vector<finger_entry>& table,
                            const uint32_t m,
                            const uint32_t id,
                            const uint32_t idx_of_entry1)
 {
     stringstream s;
-   // cout << "table size is " << table.size() << "idx of entry is " << idx_of_entry1 << endl;
     assert(table.size() == (idx_of_entry1 + m));
     s << "finger table:\n";
     for (size_t i = 1; (i - 1 + idx_of_entry1) < table.size(); ++i) {
@@ -833,8 +809,8 @@ get_finger_table_as_string(const vector<finger_entry>& table,
     return s.str();
 }
 
-string
-get_keys_table_as_string(const map<int32_t, _FILE>& table)
+// output of get_keys_table
+string get_keys_table_as_string(const map<int32_t, _FILE>& table)
 {
     stringstream s;
     map<int32_t, _FILE>::const_iterator it = table.begin();
@@ -853,6 +829,7 @@ get_keys_table_as_string(const map<int32_t, _FILE>& table)
     return s.str();
 }
 
+// output of add_file 
 string get_ADD_FILE_result_as_string(const char *fname,
                                          const int32_t key,
                                          const int32_t nodeId)
@@ -864,6 +841,7 @@ string get_ADD_FILE_result_as_string(const char *fname,
      return s.str();
 }
 
+// output of del_file
 string get_DEL_FILE_result_as_string(const char *fname,
                                          const int32_t key,
                                          const bool deleted,
@@ -884,7 +862,7 @@ string get_DEL_FILE_result_as_string(const char *fname,
      return s.str();
 }
 
-
+// output of get_file
 string get_GET_FILE_result_as_string(const char *fname,
                                          const int32_t key,
                                          const bool found,
