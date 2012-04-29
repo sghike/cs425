@@ -65,6 +65,55 @@ class finger_entry {
 
 };
 
+typedef struct __FILE__isset {
+  __FILE__isset() : name(false), data(false) {}
+  bool name;
+  bool data;
+} __FILE__isset;
+
+class _FILE {
+ public:
+
+  static const char* ascii_fingerprint; // = "07A9615F837F7D0A952B595DD3020972";
+  static const uint8_t binary_fingerprint[16]; // = {0x07,0xA9,0x61,0x5F,0x83,0x7F,0x7D,0x0A,0x95,0x2B,0x59,0x5D,0xD3,0x02,0x09,0x72};
+
+  _FILE() : name(""), data("") {
+  }
+
+  virtual ~_FILE() throw() {}
+
+  std::string name;
+  std::string data;
+
+  __FILE__isset __isset;
+
+  void __set_name(const std::string& val) {
+    name = val;
+  }
+
+  void __set_data(const std::string& val) {
+    data = val;
+  }
+
+  bool operator == (const _FILE & rhs) const
+  {
+    if (!(name == rhs.name))
+      return false;
+    if (!(data == rhs.data))
+      return false;
+    return true;
+  }
+  bool operator != (const _FILE &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const _FILE & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
 typedef struct _node_table__isset {
   _node_table__isset() : finger_table(false), keys_table(false) {}
   bool finger_table;
@@ -74,8 +123,8 @@ typedef struct _node_table__isset {
 class node_table {
  public:
 
-  static const char* ascii_fingerprint; // = "322BD56365D2D0DB3F4FD04249548998";
-  static const uint8_t binary_fingerprint[16]; // = {0x32,0x2B,0xD5,0x63,0x65,0xD2,0xD0,0xDB,0x3F,0x4F,0xD0,0x42,0x49,0x54,0x89,0x98};
+  static const char* ascii_fingerprint; // = "B334B55E1B4598B5FA65B2526D9F8D52";
+  static const uint8_t binary_fingerprint[16]; // = {0xB3,0x34,0xB5,0x5E,0x1B,0x45,0x98,0xB5,0xFA,0x65,0xB2,0x52,0x6D,0x9F,0x8D,0x52};
 
   node_table() {
   }
@@ -83,7 +132,7 @@ class node_table {
   virtual ~node_table() throw() {}
 
   std::vector<finger_entry>  finger_table;
-  std::map<int32_t, std::string>  keys_table;
+  std::map<int32_t, _FILE>  keys_table;
 
   _node_table__isset __isset;
 
@@ -91,7 +140,7 @@ class node_table {
     finger_table = val;
   }
 
-  void __set_keys_table(const std::map<int32_t, std::string> & val) {
+  void __set_keys_table(const std::map<int32_t, _FILE> & val) {
     keys_table = val;
   }
 
@@ -115,26 +164,26 @@ class node_table {
 };
 
 typedef struct _file_data__isset {
-  _file_data__isset() : found(false), node(false), data(false) {}
+  _file_data__isset() : found(false), node(false), file(false) {}
   bool found;
   bool node;
-  bool data;
+  bool file;
 } _file_data__isset;
 
 class file_data {
  public:
 
-  static const char* ascii_fingerprint; // = "3AF079A0ABCF5F81A1FDD88ABB37237A";
-  static const uint8_t binary_fingerprint[16]; // = {0x3A,0xF0,0x79,0xA0,0xAB,0xCF,0x5F,0x81,0xA1,0xFD,0xD8,0x8A,0xBB,0x37,0x23,0x7A};
+  static const char* ascii_fingerprint; // = "259CE4ABE806A3EEF80D27D2FC359CB0";
+  static const uint8_t binary_fingerprint[16]; // = {0x25,0x9C,0xE4,0xAB,0xE8,0x06,0xA3,0xEE,0xF8,0x0D,0x27,0xD2,0xFC,0x35,0x9C,0xB0};
 
-  file_data() : found(0), node(0), data("") {
+  file_data() : found(0), node(0) {
   }
 
   virtual ~file_data() throw() {}
 
   bool found;
   int32_t node;
-  std::string data;
+  _FILE file;
 
   _file_data__isset __isset;
 
@@ -146,8 +195,8 @@ class file_data {
     node = val;
   }
 
-  void __set_data(const std::string& val) {
-    data = val;
+  void __set_file(const _FILE& val) {
+    file = val;
   }
 
   bool operator == (const file_data & rhs) const
@@ -156,7 +205,7 @@ class file_data {
       return false;
     if (!(node == rhs.node))
       return false;
-    if (!(data == rhs.data))
+    if (!(file == rhs.file))
       return false;
     return true;
   }

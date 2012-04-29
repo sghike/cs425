@@ -61,7 +61,7 @@ class Node {
     int stabilizeInterval;
     int fixInterval;
     int seed;
-    map<int, string> keys_table;
+    map<int, _FILE> keys_table;
 
     Node(int m, int id, int port) {
       int i;
@@ -362,15 +362,15 @@ class NodeHandler : virtual public NodeIf {
     }
   }
   
-  int add_file(const int32_t key_id, const std::string& s) {
+  int add_file(const int32_t key_id, const _FILE& s) {
     // Your implementation goes here
     printf("add_file\n");
     int ret;
     finger_entry succ;
     succ = me->find_successor_local(key_id);
     if (succ.id == me->id) {
-      pair<map<int, string>::iterator, bool> check; 
-      check = me->keys_table.insert(pair<int, string>(key_id, s)); 
+      pair<map<int, _FILE>::iterator, bool> check; 
+      check = me->keys_table.insert(pair<int, _FILE>(key_id, s)); 
       if (check.second == false) {
         printf("file with same key exists already\n");
         ret = -1; //failure
@@ -423,15 +423,14 @@ class NodeHandler : virtual public NodeIf {
     finger_entry succ;
     succ = me->find_successor_local(key_id);
     if (succ.id == me->id) {
-      map<int, string>::iterator it;
+      map<int, _FILE>::iterator it;
       it = me->keys_table.find(key_id); 
       if (it == me->keys_table.end()) { //failure
         _return.node = -1;
-        _return.data = "";
         cout << "node= <" << me->id << ">: no such file k= <" << key_id << "> to serve" << endl;
        } else {
          _return.node = me->id;
-         _return.data = me->keys_table[key_id]; // success
+         _return.file = me->keys_table[key_id]; // success
          cout << "node= <" << me->id << ">: served file: k= <" << key_id << ">" << endl;
       }
     } else {

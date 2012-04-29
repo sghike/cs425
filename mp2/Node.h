@@ -20,7 +20,7 @@ class NodeIf {
   virtual void get_successor(finger_entry& _return) = 0;
   virtual void get_predecessor(finger_entry& _return) = 0;
   virtual void notify(const finger_entry& n) = 0;
-  virtual int32_t add_file(const int32_t key_id, const std::string& s) = 0;
+  virtual int32_t add_file(const int32_t key_id, const _FILE& s) = 0;
   virtual int32_t del_file(const int32_t key_id) = 0;
   virtual void get_file(file_data& _return, const int32_t key_id) = 0;
   virtual void get_table(node_table& _return, const int32_t id) = 0;
@@ -68,7 +68,7 @@ class NodeNull : virtual public NodeIf {
   void notify(const finger_entry& /* n */) {
     return;
   }
-  int32_t add_file(const int32_t /* key_id */, const std::string& /* s */) {
+  int32_t add_file(const int32_t /* key_id */, const _FILE& /* s */) {
     int32_t _return = 0;
     return _return;
   }
@@ -585,13 +585,13 @@ typedef struct _Node_add_file_args__isset {
 class Node_add_file_args {
  public:
 
-  Node_add_file_args() : key_id(0), s("") {
+  Node_add_file_args() : key_id(0) {
   }
 
   virtual ~Node_add_file_args() throw() {}
 
   int32_t key_id;
-  std::string s;
+  _FILE s;
 
   _Node_add_file_args__isset __isset;
 
@@ -599,7 +599,7 @@ class Node_add_file_args {
     key_id = val;
   }
 
-  void __set_s(const std::string& val) {
+  void __set_s(const _FILE& val) {
     s = val;
   }
 
@@ -630,7 +630,7 @@ class Node_add_file_pargs {
   virtual ~Node_add_file_pargs() throw() {}
 
   const int32_t* key_id;
-  const std::string* s;
+  const _FILE* s;
 
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
@@ -1052,8 +1052,8 @@ class NodeClient : virtual public NodeIf {
   void notify(const finger_entry& n);
   void send_notify(const finger_entry& n);
   void recv_notify();
-  int32_t add_file(const int32_t key_id, const std::string& s);
-  void send_add_file(const int32_t key_id, const std::string& s);
+  int32_t add_file(const int32_t key_id, const _FILE& s);
+  void send_add_file(const int32_t key_id, const _FILE& s);
   int32_t recv_add_file();
   int32_t del_file(const int32_t key_id);
   void send_del_file(const int32_t key_id);
@@ -1182,7 +1182,7 @@ class NodeMultiface : virtual public NodeIf {
     }
   }
 
-  int32_t add_file(const int32_t key_id, const std::string& s) {
+  int32_t add_file(const int32_t key_id, const _FILE& s) {
     size_t sz = ifaces_.size();
     for (size_t i = 0; i < sz; ++i) {
       if (i == sz - 1) {

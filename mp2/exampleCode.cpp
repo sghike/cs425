@@ -8,6 +8,124 @@
 #include <math.h>
 #include <stdio.h>
 
+    /*
+     * example output:
+fname= foo.c
+key= 3
+added to node= 4
+
+    */      
+    string get_ADD_FILE_result_as_string(const char *fname,
+                                         const int32_t key,
+                                         const int32_t nodeId)
+    {
+        std::stringstream s;
+        s << "fname= " << fname << "\n";
+        s << "key= " << key << "\n";
+        s << "added to node= " << nodeId << "\n";
+        return s.str();
+    }
+
+    /*
+     * example output:
+fname= foo.c
+key= 3
+file not found
+
+     * example output:
+fname= bar.h
+key= 6
+was stored at node= 0
+deleted
+
+    */
+    string get_DEL_FILE_result_as_string(const char *fname,
+                                         const int32_t key,
+                                         const bool deleted,
+                                         const int32_t nodeId)
+    {
+        std::stringstream s;
+        s << "fname= " << fname << "\n";
+        s << "key= " << key << "\n";
+        if (deleted) {
+            // then nodeId is meaningful
+            s << "was stored at node= " << nodeId << "\n";
+            s << "deleted\n";
+        }
+        else {
+            // assume that this means file was not found
+            s << "file not found\n";
+        }
+        return s.str();
+    }
+
+    /*
+     * example output:
+fname= foo.c
+key= 3
+file not found
+
+     * example output:
+fname= bar.h
+key= 6
+stored at node= 0
+fdata= this is file bar.h
+
+     */
+    string get_GET_FILE_result_as_string(const char *fname,
+                                         const int32_t key,
+                                         const bool found,
+                                         const int32_t nodeId,
+                                         const char *fdata)
+    {
+        std::stringstream s;
+        s << "fname= " << fname << "\n";
+        s << "key= " << key << "\n";
+        if (found) {
+            // then nodeId is meaningful
+            s << "stored at node= " << nodeId << "\n";
+            s << "fdata= " << fdata << "\n";
+        }
+        else {
+            // assume that this means file was not found
+            s << "file not found\n";
+        }
+        return s.str();
+    }
+
+    /* example output (node has 2 files):
+finger table:
+entry: i= 1, interval=[ 5, 6), node= 0
+entry: i= 2, interval=[ 6, 0), node= 0
+entry: i= 3, interval=[ 0, 4), node= 0
+keys table:
+entry: k= 1, fname= 123.doc, fdata= this is file 123.doc data
+entry: k= 3, fname= 123.txt, fdata= this is file 123.txt data
+
+     * example output (node has no file):
+finger table:
+entry: i= 1, interval=[ 1, 2), node= 4
+entry: i= 2, interval=[ 2, 4), node= 4
+entry: i= 3, interval=[ 4, 0), node= 4
+keys table:
+
+    *
+    */
+    string get_GET_TABLE_result_as_string(
+        const vector<...>& finger_table,
+        const uint32_t m,
+        const uint32_t myid,
+        const uint32_t idx_of_entry1,
+        const std::map<int32_t, ...>& keys_table)
+    {
+        return get_finger_table_as_string(
+            finger_table, m, myid, idx_of_entry1) \
+            + \
+            get_keys_table_as_string(keys_table);
+    }
+
+
+
 /*
  * use this get_finger_table_as_string() function. when asked for its
  * finger table, a node should respond with the string returned by
@@ -33,13 +151,13 @@ get_finger_table_as_string(const std::vector<...>& table,
     s << "finger table:\n";
     for (size_t i = 1; (i - 1 + idx_of_entry1) < table.size(); ++i) {
         using std::setw;
-	s << "entry: i= " << setw(2) << i << ", interval=["
-	  << setw(4) << (myid + (int)pow(2, i-1)) % ((int)pow(2, m))
-	  << ",   "
-	  << setw(4) << (myid + (int)pow(2, i)) % ((int)pow(2, m))
-	  << "),   node= "
-	  << setw(4) << table.at(i - 1 + idx_of_entry1).id
-	  << "\n";
+        s << "entry: i= " << setw(2) << i << ", interval=["
+          << setw(4) << (myid + (int)pow(2, i-1)) % ((int)pow(2, m))
+          << ",   "
+          << setw(4) << (myid + (int)pow(2, i)) % ((int)pow(2, m))
+          << "),   node= "
+          << setw(4) << table.at(i - 1 + idx_of_entry1).id
+          << "\n";
     }
     return s.str();
 }
@@ -68,11 +186,11 @@ get_keys_table_as_string(const std::map<int32_t, ...>& table)
     s << "keys table:\n";
     for (; it != table.end(); ++it) {
         using std::setw;
-	/* assuming file names are <= 10 chars long */
-	s << "entry: k= " << setw(4) << it->first
-	  << ",  fname= " << setw(10) << it->second.name
-	  << ",  fdata= " << it->second.data
-	  << "\n";
+        /* assuming file names are <= 10 chars long */
+        s << "entry: k= " << setw(4) << it->first
+          << ",  fname= " << setw(10) << it->second.name
+          << ",  fdata= " << it->second.data
+          << "\n";
     }
     return s.str();
 }

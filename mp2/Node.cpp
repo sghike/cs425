@@ -778,8 +778,8 @@ uint32_t Node_add_file_args::read(::apache::thrift::protocol::TProtocol* iprot) 
         }
         break;
       case 2:
-        if (ftype == ::apache::thrift::protocol::T_STRING) {
-          xfer += iprot->readString(this->s);
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->s.read(iprot);
           this->__isset.s = true;
         } else {
           xfer += iprot->skip(ftype);
@@ -803,8 +803,8 @@ uint32_t Node_add_file_args::write(::apache::thrift::protocol::TProtocol* oprot)
   xfer += oprot->writeFieldBegin("key_id", ::apache::thrift::protocol::T_I32, 1);
   xfer += oprot->writeI32(this->key_id);
   xfer += oprot->writeFieldEnd();
-  xfer += oprot->writeFieldBegin("s", ::apache::thrift::protocol::T_STRING, 2);
-  xfer += oprot->writeString(this->s);
+  xfer += oprot->writeFieldBegin("s", ::apache::thrift::protocol::T_STRUCT, 2);
+  xfer += this->s.write(oprot);
   xfer += oprot->writeFieldEnd();
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -817,8 +817,8 @@ uint32_t Node_add_file_pargs::write(::apache::thrift::protocol::TProtocol* oprot
   xfer += oprot->writeFieldBegin("key_id", ::apache::thrift::protocol::T_I32, 1);
   xfer += oprot->writeI32((*(this->key_id)));
   xfer += oprot->writeFieldEnd();
-  xfer += oprot->writeFieldBegin("s", ::apache::thrift::protocol::T_STRING, 2);
-  xfer += oprot->writeString((*(this->s)));
+  xfer += oprot->writeFieldBegin("s", ::apache::thrift::protocol::T_STRUCT, 2);
+  xfer += (*(this->s)).write(oprot);
   xfer += oprot->writeFieldEnd();
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -1678,13 +1678,13 @@ void NodeClient::recv_notify()
   return;
 }
 
-int32_t NodeClient::add_file(const int32_t key_id, const std::string& s)
+int32_t NodeClient::add_file(const int32_t key_id, const _FILE& s)
 {
   send_add_file(key_id, s);
   return recv_add_file();
 }
 
-void NodeClient::send_add_file(const int32_t key_id, const std::string& s)
+void NodeClient::send_add_file(const int32_t key_id, const _FILE& s)
 {
   int32_t cseqid = 0;
   oprot_->writeMessageBegin("add_file", ::apache::thrift::protocol::T_CALL, cseqid);

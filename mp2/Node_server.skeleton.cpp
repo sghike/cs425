@@ -47,7 +47,7 @@ class NodeHandler : virtual public NodeIf {
     printf("notify\n");
   }
 
-  int32_t add_file(const int32_t key_id, const std::string& s) {
+  int32_t add_file(const int32_t key_id, const _FILE& s) {
     // Your implementation goes here
     printf("add_file\n");
   }
