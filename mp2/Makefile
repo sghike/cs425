@@ -17,7 +17,7 @@ all: node listener
 %.o: %.cpp
 	$(CXX) -Wall $(INC) -c $< -o $@
 
-node: Node_server.o $(GEN_OBJ)
+node: Node_server.o sha1.c $(GEN_OBJ)
 	$(CXX) $(LINK) -lthrift $^ -o $@
 
 listener: listener.cpp sha1.c $(LISTEN_OBJ) $(GEN_OBJ)

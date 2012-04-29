@@ -392,7 +392,7 @@ int add_file(string input, string m_val)
     vector<string>::iterator it;
     int m;
     SHA1Context sha;
-    FILE *fp;
+   // FILE *fp;
     int32_t key_id;
     _FILE file;
 
@@ -415,7 +415,7 @@ int add_file(string input, string m_val)
     file.name = filename;
     file.data = data;
     // create sha-1 key
-    SHA1Reset(&sha);
+   SHA1Reset(&sha);
     SHA1Input(&sha, (unsigned char*)filename.c_str(), filename.size());
     if (!SHA1Result(&sha))
     {
@@ -447,7 +447,7 @@ int add_file(string input, string m_val)
     NodeClient client(protocol);
     transport->open();
     // call rpc function
-    int32_t id  = client.add_file(key_id, file);
+    int32_t id  = client.dummy_add_file(file);
     string output;
     if(id > -1)
     {
@@ -469,9 +469,8 @@ int del_file(string input, string m_val)
     string filename;
     vector<string> tokens;
     vector<string>::iterator it;
-    int key_id;
+   int key_id;
     SHA1Context sha;
-    FILE *fp;
     int m = atoi(m_val.c_str());
     ss << input;
     while(ss >> buf) 
@@ -484,7 +483,7 @@ int del_file(string input, string m_val)
     cout << "filename is : " << filename << endl;
     
     // create sha-1 key
-    SHA1Reset(&sha);
+   SHA1Reset(&sha);
     SHA1Input(&sha, (unsigned char*)filename.c_str(), filename.size());
     if (!SHA1Result(&sha))
     {
@@ -494,8 +493,7 @@ int del_file(string input, string m_val)
     {
         key_id = sha.Message_Digest[4]%((int)pow(2,m)) ;
         cout << "Key ID for " << filename << " : " << key_id << endl;
-    }
-    
+    }    
     int port;
     // sending information to introducer
     if(introducer_port != 0)
@@ -518,7 +516,7 @@ int del_file(string input, string m_val)
     NodeClient client(protocol);
     transport->open();
     // call rpc function
-    int id  = client.del_file(key_id);
+    int id  = client.dummy_del_file(filename);
     string output;
     bool check = (id != -1);
     output = get_DEL_FILE_result_as_string(filename.c_str(), key_id, check, id);
@@ -554,7 +552,7 @@ int get_file(string input, string m_val)
     
     cout << "filename is : " << filename << endl;
      // create sha-1 key
-    SHA1Reset(&sha);
+   SHA1Reset(&sha);
     SHA1Input(&sha, (unsigned char*)filename.c_str(), filename.size());
     if (!SHA1Result(&sha))
     {
@@ -588,7 +586,7 @@ int get_file(string input, string m_val)
     NodeClient client(protocol);
     transport->open();
     //call rpc function
-    client.get_file(data, key_id);
+    client.dummy_get_file(data, filename);
     bool found = (data.node != -1);
     string output;
     output = get_GET_FILE_result_as_string(filename.c_str(), key_id, found, data.node, data.file.data.c_str());

@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>
+#include "sha1.h"
 
 using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
@@ -267,7 +268,26 @@ class Node {
         cout << "Transfer of files between nodes " << id << " and " << predecessor.id << " failed." << endl;
       }
     }
-  
+    
+    int computeHash(string filename)
+    {
+      int key_id;
+      SHA1Context sha;
+      SHA1Reset(&sha);
+      SHA1Input(&sha, (unsigned char*)filename.c_str(), filename.size());
+      if (!SHA1Result(&sha))
+      {
+          cout << "key_gen_test: could not compute key ID for" << filename << endl;
+          return -1;
+      }
+      else
+      {
+          key_id = sha.Message_Digest[4]%((int)pow(2,m)) ;
+          cout << "Key ID for " << filename << " : " << key_id << endl;
+      }
+      return key_id;
+    }
+    
 };
 
 Node *me;
@@ -482,6 +502,31 @@ class NodeHandler : virtual public NodeIf {
     printf("accept_files\n");
     me->keys_table.insert(offload.begin(), offload.end());
     return true;
+  }
+ 
+  int32_t dummy_add_file(const _FILE& s) {
+    // Your implementation goes here
+    printf("dummy_add_file\n");
+    int hash = me->computeHash(s.name);
+    int32_t add = add_file(hash, s);
+    return add;
+    
+  }
+
+  int32_t dummy_del_file(const std::string& key) {
+    // Your implementation goes here
+    printf("dummy_del_file\n");
+    int hash = me->computeHash(key);
+    int32_t del = del_file(hash);
+    return del;
+
+  }
+
+  void dummy_get_file(file_data& _return, const std::string& key) {
+    // Your implementation goes here
+    printf("dummy_get_file\n");
+    int hash = me->computeHash(key);
+    get_file(_return, hash);
   }
 
 };

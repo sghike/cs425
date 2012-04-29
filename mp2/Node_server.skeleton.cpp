@@ -72,6 +72,21 @@ class NodeHandler : virtual public NodeIf {
     printf("accept_files\n");
   }
 
+  int32_t dummy_add_file(const _FILE& s) {
+    // Your implementation goes here
+    printf("dummy_add_file\n");
+  }
+
+  int32_t dummy_del_file(const std::string& key) {
+    // Your implementation goes here
+    printf("dummy_del_file\n");
+  }
+
+  void dummy_get_file(file_data& _return, const std::string& key) {
+    // Your implementation goes here
+    printf("dummy_get_file\n");
+  }
+
 };
 
 int main(int argc, char **argv) {

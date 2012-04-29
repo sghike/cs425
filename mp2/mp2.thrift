@@ -31,6 +31,9 @@ service Node {
         file_data get_file(1:i32 key_id);
         node_table get_table(1:i32 id);
         bool accept_files(1:map<i32, _FILE> offload);
+        i32 dummy_add_file(1:_FILE s);
+        i32 dummy_del_file(1:string key);
+        file_data dummy_get_file(1:string key);
 }
 
 service ListenerService {
