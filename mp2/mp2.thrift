@@ -36,6 +36,3 @@ service Node {
         file_data dummy_get_file(1:string key);
 }
 
-service ListenerService {
-	
-}

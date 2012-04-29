@@ -2,7 +2,6 @@
 #define __LISTENER_HPP_
 #include <vector>
 #include <map>
-#include "ListenerService.h"
 
 using namespace std;
 using namespace ::mp2;
