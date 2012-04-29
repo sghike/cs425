@@ -362,7 +362,7 @@ class NodeHandler : virtual public NodeIf {
     }
   }
   
-  int add_file(const int32_t key_id, const _FILE& s) {
+  int32_t add_file(const int32_t key_id, const _FILE& s) {
     // Your implementation goes here
     printf("add_file\n");
     int ret;
@@ -390,7 +390,7 @@ class NodeHandler : virtual public NodeIf {
     return ret;
   }
 
-  int del_file(const int32_t key_id) {
+  int32_t del_file(const int32_t key_id) {
     // Your implementation goes here
     printf("del_file\n");
     int ret;

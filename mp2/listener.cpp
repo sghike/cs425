@@ -447,7 +447,7 @@ int add_file(string input, string m_val)
     NodeClient client(protocol);
     transport->open();
     // call rpc function
-    int id  = client.add_file(key_id, file);
+    int32_t id  = client.add_file(key_id, file);
     if(id > -1)
     {
         get_ADD_FILE_result_as_string(filename.c_str(), key_id, id);

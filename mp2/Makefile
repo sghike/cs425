@@ -20,7 +20,7 @@ all: node listener
 node: Node_server.o $(GEN_OBJ)
 	$(CXX) $(LINK) -lthrift $^ -o $@
 
-listener: listener.cpp sha1.c $(LISTEN_OBJ)
+listener: listener.cpp sha1.c $(LISTEN_OBJ) $(GEN_OBJ)
 	$(CXX) $(INC) $(LINK) -lthrift $^ -o $@
 
 clean:
