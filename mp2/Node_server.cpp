@@ -333,7 +333,6 @@ class NodeHandler : virtual public NodeIf {
     if (me->id == id) {
       _return.finger_table = me->finger_table;
       _return.keys_table = me->keys_table;
-      _return.node = id;
       return;
     } else {
       finger_entry pred;
@@ -348,7 +347,6 @@ class NodeHandler : virtual public NodeIf {
       transport->close();
 
       if (pred_succ.id != id) {
-        _return.node = -1;
         return;
       } else {
         boost::shared_ptr<TSocket> socket1(new TSocket("localhost", 
