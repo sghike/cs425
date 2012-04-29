@@ -333,7 +333,7 @@ void add_node_func(string input, vector<int> ports, string m_val,
     {
         id_num = new char [it->size()+1];
         strcpy(id_num, it->c_str());
-        cout << "adding node : " << atoi(id_num) << "\n";
+       // cout << "adding node : " << atoi(id_num) << "\n";
         add_node(atoi(id_num), ports, m_val, si_val, fi_val, lc);
     }
     
@@ -676,19 +676,19 @@ int scan_port(int port_num)
    
     if(ver == -1)
     {
-        cout << "port " << port_num << " is not available" << endl;
+     //   cout << "port " << port_num << " is not available" << endl;
         return -1;
     }
-    else
-        cout << "port " << port_num << " is available" << endl;
-
+    else{
+      // cout << "port " << port_num << " is available" << endl;
+    }
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
     {
         perror("setsockopt");
         exit(1);
     }
      
-    cout << "Using port : " << port_num << "\n";
+  //  cout << "Using port : " << port_num << "\n";
     
     return 0;
 }
@@ -701,7 +701,6 @@ int make_syscall(string m_val, int ID, int port_num, string si_val,
     char buff[512];
    // pid_t pID;
     string command = "./node";
-    cout << "creating a new node"<< endl;
    
     // number of bits of the keys/node IDs
     if(m_val.empty() == false)
