@@ -332,12 +332,9 @@ class NodeHandler : virtual public NodeIf {
       me->finger_table[0] = me->successor;
       cout << "node= " << me->id << ": updated predecessor= " << me->predecessor.id << endl;
       cout << "node= " << me->id << ": updated finger entry: i= " << 1 << ", pointer= " << me->finger_table[0].id << endl;
+    }
+    if (n.id == me->id) {
       pthread_mutex_unlock(&finger_lock);
-    }
-    if (n.id == me->id) {
-      return;
-    }
-    if (n.id == me->id) {
       return;
     }
     pthread_mutex_unlock(&finger_lock);
