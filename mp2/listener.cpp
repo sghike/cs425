@@ -800,7 +800,7 @@ string get_GET_TABLE_result_as_string(
         return get_finger_table_as_string(
             finger_table, m, id, idx_of_entry1) \
             + \
-            get_keys_table_as_string(keys_table);
+            get_keys_table_as_string(keys_table, fname);
     }
 
 
@@ -814,7 +814,7 @@ get_finger_table_as_string(const vector<finger_entry>& table,
     assert(table.size() == (idx_of_entry1 + m));
     s << "finger table:\n";
     for (size_t i = 1; (i - 1 + idx_of_entry1) < table.size(); ++i) {
-        using std::setw;
+        using setw;
         s << "entry: i= " << setw(2) << i << ", interval=["
           << setw(4) << (id + (int)pow(2, i-1)) % ((int)pow(2, m))
           << ",   "
@@ -831,16 +831,17 @@ get_keys_table_as_string(const map<int32_t, _FILE>& table)
 {
     stringstream s;
     map<int32_t, _FILE>::const_iterator it = table.begin();
+
     /* map keeps the keys sorted, so our iteration will be in
  *      * ascending order of the keys
  *           */
     s << "keys table:\n";
     for (; it != table.end(); ++it) {
-        using std::setw;
+        using setw;
         /* assuming file names are <= 10 chars long */
         s << "entry: k= " << setw(4) << it->first
-          << ",  fname= " << setw(10) << it->second.name
-          << ",  fdata= " << it->second.data
+          << ",  fname= " << setw(10) << fname
+          << ",  fdata= " << it->second
           << "\n";
     }
     return s.str();
