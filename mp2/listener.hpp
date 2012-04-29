@@ -6,10 +6,10 @@
 using namespace std;
 using namespace ::mp2;
 
-void add_node_func(string input, vector<int> ports, string m_val, string si_val, string fi_val, int lc);
+void add_node_func(string input, vector<int> ports, string m_val, string si_val, string fi_val, string lc_val);
 
 int add_node(int ID, vector<int> ports, string m_val, string si_val,
-             string fi_val, int lc);
+             string fi_val, string lc_val);
 
 int add_file(string input, string m_val);
 
@@ -22,7 +22,7 @@ int get_table(string input, string m_val);
 int scan_port(int port_num);
 
 int make_syscall(string m_val, int ID, int port_num, string si_val, 
-                 string fi_val, int lc, int seed);
+                 string fi_val, string lc_val, int seed);
 
 string get_DEL_FILE_result_as_string(const char *fname,
                                          const int32_t key,

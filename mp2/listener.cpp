@@ -72,7 +72,8 @@ int main(int argc, char* argv[])
     string m_val;
     string si_val;
     string fi_val;
-    string atn_val;  
+    string atn_val;
+    string lc_val;  
 
     vector<int> ports; // sequence of ports that the user specified
     string portnum;
@@ -256,10 +257,14 @@ int main(int argc, char* argv[])
         fi_val.assign(argv[fi_pos+1]);
         check_int.clear();
     }
-
+    
+    if(lc == 1)
+    {
+        lc_val.assign(argv[lc_pos+1]);
+    }
     // invoke node 0(introducer port) if no attachToNode is specified
     if(atn ==0)
-    	add_node_func("ADD_NODE 0", ports, m_val, si_val, fi_val, lc); 
+    	add_node_func("ADD_NODE 0", ports, m_val, si_val, fi_val, lc_val); 
 
     // process user commands from the terminal
     while(1)
@@ -294,7 +299,7 @@ int main(int argc, char* argv[])
                        " you are not attached to the introducer" << endl; 
                 }
                 else 
-                    add_node_func(input, ports, m_val, si_val, fi_val, lc);
+                    add_node_func(input, ports, m_val, si_val, fi_val, lc_val);
                 break;
             case 1:
                 add_file(input, m_val);
@@ -322,7 +327,7 @@ int main(int argc, char* argv[])
 
 // process the nodes that needs to be added to the chord system 
 void add_node_func(string input, vector<int> ports, string m_val,
-                   string si_val, string fi_val, int lc)
+                   string si_val, string fi_val, string lc_val)
 {
     string buf;
     stringstream ss;
@@ -343,14 +348,14 @@ void add_node_func(string input, vector<int> ports, string m_val,
         id_num = new char [it->size()+1];
         strcpy(id_num, it->c_str());
        // cout << "adding node : " << atoi(id_num) << "\n";
-        add_node(atoi(id_num), ports, m_val, si_val, fi_val, lc);
+        add_node(atoi(id_num), ports, m_val, si_val, fi_val, lc_val);
     }
     return;
 }
 
 // add a node to the chord system  
 int add_node(int ID, vector<int> ports, string  m_val, string si_val,
-             string fi_val, int lc)
+             string fi_val, string lc_val)
 {
     int port_num;
     int s;
@@ -379,7 +384,7 @@ int add_node(int ID, vector<int> ports, string  m_val, string si_val,
     }
     
     // create a process listening on port rand_port
-    if(make_syscall(m_val, ID, port_num, si_val, fi_val, lc, seed) == 1)
+    if(make_syscall(m_val, ID, port_num, si_val, fi_val, lc_val, seed) == 1)
     {
         cout << "syscall failed";
                return 1;
@@ -710,7 +715,7 @@ int scan_port(int port_num)
 
 // do a syscall to create new nodes
 int make_syscall(string m_val, int ID, int port_num, string si_val,
-                 string fi_val, int lc, int seed)
+                 string fi_val, string lc_val, int seed)
 {
     FILE *in;
     char buff[512];
@@ -764,9 +769,11 @@ int make_syscall(string m_val, int ID, int port_num, string si_val,
     }
 
     // logConf
-    if(lc == 1)
+    if(lc_val.empty() == false)
     {
-        command.append(" --logConf");
+        command.append(" --logConf ");
+        command.append(lc_val);   
+
     }
     command.append(" & ");
     in = popen(command.c_str(), "w");
