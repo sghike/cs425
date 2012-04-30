@@ -666,7 +666,7 @@ int get_table(string input, string m_val)
     node_table table;
     client.get_table(table, atoi(id_num));
     transport->close(); 
-    cout << get_GET_TABLE_result_as_string(table.finger_table, m, atoi(id_num), 0, table.keys_table);
+    cout << get_GET_TABLE_result_as_string(table.finger_table, m, atoi(id_num), 0, table.predecessor.id, table.keys_table);
 
     return 0;
 }
@@ -790,7 +790,7 @@ string get_GET_TABLE_result_as_string(
         const map<int32_t, _FILE>& keys_table)
     {
         return get_finger_table_as_string(
-            finger_table, m, id, idx_of_entry1) \
+            finger_table, m, id, idx_of_entry1, predecessor_id) \
             + \
             get_keys_table_as_string(keys_table);
     }
@@ -799,10 +799,12 @@ string get_GET_TABLE_result_as_string(
 string get_finger_table_as_string(const vector<finger_entry>& table,
                            const uint32_t m,
                            const uint32_t id,
-                           const uint32_t idx_of_entry1)
+                           const uint32_t idx_of_entry1,
+                           const int32_t predecessor_id)
 {
     stringstream s;
     assert(table.size() == (idx_of_entry1 + m));
+    s << "predecessor= " << setw(4) << predecessor_id << "\n";
     s << "finger table:\n";
     for (size_t i = 1; (i - 1 + idx_of_entry1) < table.size(); ++i) {
         using std::setw;
