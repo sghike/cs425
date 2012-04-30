@@ -47,7 +47,7 @@ string get_finger_table_as_string(const vector<finger_entry>& table,
                            const uint32_t m,
                            const uint32_t id,
                            const uint32_t idx_of_entry1,
-                           const int32_t predecessor,
+                           const int32_t predecessor
                            );
 
 string get_GET_FILE_result_as_string(const char *fname,

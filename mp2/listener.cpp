@@ -720,7 +720,6 @@ int make_syscall(string m_val, int ID, int port_num, string si_val,
     FILE *in;
     char buff[512];
     string command = "./node";
-   
     // number of bits of the keys/node IDs
     if(m_val.empty() == false)
     {

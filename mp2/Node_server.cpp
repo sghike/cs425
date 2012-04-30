@@ -410,7 +410,7 @@ class NodeHandler : virtual public NodeIf {
       pthread_mutex_lock(&finger_lock);
       pthread_mutex_lock(&keys_lock);
       _return.finger_table = me->finger_table;
-      _return.predecesoor = me->predecessor;
+      _return.predecessor = me->predecessor;
       _return.keys_table = me->keys_table;
       pthread_mutex_unlock(&keys_lock);
       pthread_mutex_unlock(&finger_lock);
